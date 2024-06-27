@@ -1,10 +1,11 @@
 // SPDX-FileCopyrightText: 2024 Filipe Coelho <falktx@darkglass.com>
-// SPDX-License-Identifier: AGPL-3.0-or-later
+// SPDX-License-Identifier: ISC
 
-#include "api.hpp"
+#include "input.hpp"
 
 #include <cassert>
 #include <cerrno>
+#include <cstdio>
 #include <fcntl.h>
 #include <libinput.h>
 #include <poll.h>
