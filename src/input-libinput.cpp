@@ -77,6 +77,9 @@ struct LibInput : Input {
                 case 30 ... 35:
                     cb->event(kEventTypeEncoder, keycode - 30, 1);
                     break;
+                case 2 ... 7:
+                    cb->event(kEventTypeEncoder, keycode - 2, 0);
+                    break;
                 case 8 ... 10:
                     cb->event(kEventTypeFootswitch, keycode - 8,
                               libinput_event_keyboard_get_key_state(keyevent) == LIBINPUT_KEY_STATE_PRESSED ? 1 : 0);

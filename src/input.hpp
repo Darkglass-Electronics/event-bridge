@@ -22,15 +22,15 @@ const char* EventTypeStr(const EventType etype)
     switch (etype)
     {
     case kEventTypeNull:
-        "kEventTypeNull";
+        return "kEventTypeNull";
     case kEventTypeEncoder:
-        "kEventTypeEncoder";
+        return "kEventTypeEncoder";
     case kEventTypeFootswitch:
-        "kEventTypeFootswitch";
+        return "kEventTypeFootswitch";
     case kEventTypeKnob:
-        "kEventTypeKnob";
+        return "kEventTypeKnob";
     case kEventTypeLED:
-        "kEventTypeLED";
+        return "kEventTypeLED";
     }
     return "";
 }
