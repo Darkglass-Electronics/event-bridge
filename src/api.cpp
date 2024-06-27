@@ -9,7 +9,7 @@
 // --------------------------------------------------------------------------------------------------------------------
 
 struct EventStream::Impl : QObject,
-                           InputCallback
+                           Input::Callback
 {
     Callbacks* const callbacks;
     std::vector<Input*> inputs;
@@ -18,7 +18,7 @@ struct EventStream::Impl : QObject,
         : callbacks(callbacks),
           last_error(last_error)
     {
-        inputs.push_back(createNewInput(kInputTypeLibInput));
+        inputs.push_back(createNewInput(kInputBackendTypeLibInput));
     }
 
     ~Impl()
@@ -42,7 +42,7 @@ struct EventStream::Impl : QObject,
 private:
     std::string& last_error;
 
-    void event(EventType etype, uint8_t index, int8_t value)
+    void event(EventType etype, uint8_t index, int16_t value) override
     {
         callbacks->inputEventReceived(etype, index, value);
     }

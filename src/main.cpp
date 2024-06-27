@@ -175,7 +175,7 @@ struct Connector : QObject,
     }
 
 private:
-    void inputEventReceived(EventType etype, uint8_t index, int8_t value) override
+    void inputEventReceived(EventType etype, uint8_t index, int16_t value) override
     {
         printf("inputEventReceived %d:%s, %u, %d\n", etype, EventTypeStr(etype), index, value);
     }

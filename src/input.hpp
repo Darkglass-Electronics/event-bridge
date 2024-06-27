@@ -6,13 +6,32 @@
 #include <cstdint>
 
 /**
- * TODO document me
+ * The possible event types, for both receiving and sending.
  */
 enum EventType {
+    /**
+     * Null event type.
+     */
     kEventTypeNull = 0,
+
+    /**
+     * Encoder event type, an endless rotation actuator not bound to a minimum/maximum range.
+     *
+     * Positive values mean clock-wise rotation,
+     * negative values mean anti-clock-wise rotation,
+     * and 0 means "click".
+     */
     kEventTypeEncoder,
+
+    /**
+     * Footswitch event type.
+     * Works in "latched" mode, where a value of 1 means pressed and 0 means released.
+     */
     kEventTypeFootswitch,
-    kEventTypeKnob,
+
+    /**
+     * TBD.
+     */
     kEventTypeLED,
 };
 
@@ -27,8 +46,6 @@ const char* EventTypeStr(const EventType etype)
         return "kEventTypeEncoder";
     case kEventTypeFootswitch:
         return "kEventTypeFootswitch";
-    case kEventTypeKnob:
-        return "kEventTypeKnob";
     case kEventTypeLED:
         return "kEventTypeLED";
     }
@@ -36,44 +53,47 @@ const char* EventTypeStr(const EventType etype)
 }
 
 /**
- * TODO document me
- */
-enum InputType {
-    kInputTypeNull,
-    kInputTypeLibInput,
-};
-
-/**
- * TODO document me
- */
-struct InputCallback {
-    virtual ~InputCallback() {};
-
-    /**
-     * Event trigger function, called when an event is received.
-     */
-    virtual void event(EventType etype, uint8_t index, int8_t value) = 0;
-};
-
-/**
- * TODO document me
+ * Abstract Input class for sending and receiving events.
+ * TODO better naming
  */
 struct Input {
+    /**
+     * Callback used for receiving events, triggered via Input::poll().
+     */
+    struct Callback {
+        /** destructor */
+        virtual ~Callback() {};
+
+        /**
+         * Event trigger function, called when an event is received.
+         */
+        virtual void event(EventType type, uint8_t index, int16_t value) = 0;
+    };
+
+    /** destructor */
     virtual ~Input() {};
 
     /**
      * Event polling function, to be called at regular intervals.
-     * @note function very likely to be replaced with FD-based event polling later on.
+     * @note this function is very likely to be replaced with an FD-based event polling later on.
      */
-    virtual void poll(InputCallback* cb) = 0;
+    virtual void poll(Callback* cb) = 0;
 
     /**
      * Event trigger function, to be called for sending events.
      */
-    virtual void event(EventType etype, uint8_t index, int8_t value) = 0;
+    virtual void event(EventType type, uint8_t index, int16_t value) = 0;
 };
 
 /**
- * TODO document me
+ * The possible backends for handling events.
  */
-Input* createNewInput(InputType itype);
+enum InputBackendType {
+    kInputBackendTypeNull,
+    kInputBackendTypeLibInput,
+};
+
+/**
+ * Create a new Input class for a specified event-handling backend.
+ */
+Input* createNewInput(InputBackendType type);

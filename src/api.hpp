@@ -13,7 +13,7 @@
 struct EventStream {
     struct Callbacks {
         virtual ~Callbacks() {}
-        virtual void inputEventReceived(EventType etype, uint8_t index, int8_t value) = 0;
+        virtual void inputEventReceived(EventType etype, uint8_t index, int16_t value) = 0;
     };
 
    /**

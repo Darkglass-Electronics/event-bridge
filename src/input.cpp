@@ -9,13 +9,13 @@ Input* createNewInput_LibInput();
 
 // --------------------------------------------------------------------------------------------------------------------
 
-Input* createNewInput(const InputType itype)
+Input* createNewInput(const InputBackendType type)
 {
-    switch (itype)
+    switch (type)
     {
-    case kInputTypeNull:
+    case kInputBackendTypeNull:
         return nullptr;
-    case kInputTypeLibInput:
+    case kInputBackendTypeLibInput:
         return createNewInput_LibInput();
     }
 
