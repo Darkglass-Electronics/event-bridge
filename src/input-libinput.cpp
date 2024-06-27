@@ -62,6 +62,8 @@ struct LibInput : Input {
 
         for (struct libinput_event* event; (event = libinput_get_event(context)) != nullptr;)
         {
+            // printf("event %p\n", event);
+
             if (libinput_event_get_type(event) == LIBINPUT_EVENT_KEYBOARD_KEY)
             {
                 struct libinput_event_keyboard* const keyevent = libinput_event_get_keyboard_event(event);
@@ -78,6 +80,9 @@ struct LibInput : Input {
                 case 8 ... 10:
                     cb->event(kEventTypeFootswitch, keycode - 8,
                               libinput_event_keyboard_get_key_state(keyevent) == LIBINPUT_KEY_STATE_PRESSED ? 1 : 0);
+                    break;
+                default:
+                    printf("unused event keycode %d\n", keycode);
                     break;
                 }
             }
