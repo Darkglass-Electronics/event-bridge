@@ -1,0 +1,119 @@
+// SPDX-FileCopyrightText: 2024 Filipe Coelho <falktx@darkglass.com>
+// SPDX-License-Identifier: AGPL-3.0-or-later
+
+#include "api.hpp"
+
+#include <cassert>
+#include <cerrno>
+#include <fcntl.h>
+#include <libinput.h>
+#include <poll.h>
+#include <unistd.h>
+
+// --------------------------------------------------------------------------------------------------------------------
+
+struct LibInput : Input {
+    struct libinput* context = nullptr;
+    struct libinput_device* device = nullptr;
+    int fd = -1;
+
+    LibInput()
+    {
+        context = libinput_path_create_context(&_interface, nullptr);
+        assert(context);
+
+        fd = libinput_get_fd(context);
+        assert(fd > 0);
+
+        device = libinput_path_add_device(context, "/dev/input/by-id/usb-Adafruit_QT_Py_ESP32S3_no_psram_4F21AFD83B44-if03-event-kbd");
+        assert(device);
+
+        // device = 
+        libinput_device_ref(device);
+    }
+
+    ~LibInput() override
+    {
+        if (device != nullptr)
+        {
+            libinput_path_remove_device(device);
+            libinput_device_unref(device);
+        }
+
+        if (context != nullptr)
+            libinput_unref(context);
+    }
+
+    // FIXME timer poll is bad, rework API to work via FDs directly
+    void poll(InputCallback* const cb) override
+    {
+        static constexpr const int timeout = -1;
+
+        struct pollfd fds[1] = {};
+        fds[0].fd = fd;
+        fds[0].events = POLLIN;
+        fds[0].revents = 0;
+
+        const int rc = ::poll(fds, 1, timeout);
+        if (rc == 0)
+            return;
+
+        libinput_dispatch(context);
+
+        for (struct libinput_event* event; (event = libinput_get_event(context)) != nullptr;)
+        {
+            if (libinput_event_get_type(event) == LIBINPUT_EVENT_KEYBOARD_KEY)
+            {
+                struct libinput_event_keyboard* const keyevent = libinput_event_get_keyboard_event(event);
+                const uint32_t keycode = libinput_event_keyboard_get_key(keyevent);
+
+                switch (keycode)
+                {
+                case 44 ... 49:
+                    cb->event(kEventTypeEncoder, keycode - 44, -1);
+                    break;
+                case 30 ... 35:
+                    cb->event(kEventTypeEncoder, keycode - 30, 1);
+                    break;
+                case 8 ... 10:
+                    cb->event(kEventTypeFootswitch, keycode - 8,
+                              libinput_event_keyboard_get_key_state(keyevent) == LIBINPUT_KEY_STATE_PRESSED ? 1 : 0);
+                    break;
+                }
+            }
+
+            libinput_event_destroy(event);
+        }
+    }
+
+    void event(EventType, uint8_t, int8_t) override
+    {
+        // libinput is read-only, nothing to do here
+    }
+
+private:
+    static int _open_restricted(const char* const path, const int flags, void*)
+    {
+        const int fd = open(path, flags);
+        return fd < 0 ? -errno : fd;
+    }
+
+    static void _close_restricted(int fd, void*)
+    {
+        close(fd);
+    }
+
+    static constexpr const struct libinput_interface _interface = {
+        .open_restricted = _open_restricted,
+        .close_restricted = _close_restricted,
+    };
+};
+
+// --------------------------------------------------------------------------------------------------------------------
+
+Input* createNewInput_LibInput()
+{
+    return new LibInput();
+}
+
+// --------------------------------------------------------------------------------------------------------------------

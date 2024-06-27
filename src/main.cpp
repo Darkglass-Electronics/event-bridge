@@ -62,12 +62,14 @@ static void copyJsonObjectValue(QJsonObject& dst, const QJsonObject& src)
 // --------------------------------------------------------------------------------------------------------------------
 
 struct Connector : QObject,
+                   EventStream::Callbacks,
                    WebSocketServer::Callbacks
 {
     EventStream api;
     WebSocketServer wsServer;
     bool ok = false;
     bool verboseLogs = false;
+    int timerId = 0;
 
     // keep current state in memory
     QJsonObject stateJson;
@@ -83,7 +85,7 @@ struct Connector : QObject,
     } current;
 
     Connector()
-        : api(),
+        : api(this),
           wsServer(this)
     {
         if (! api.last_error.empty())
@@ -112,6 +114,8 @@ struct Connector : QObject,
 
         ok = true;
         stateJson["type"] = "state";
+
+        timerId = startTimer(50);
     }
 
     // handle new websocket connection
@@ -168,6 +172,20 @@ struct Connector : QObject,
 
     void handleStateChanges(const QJsonObject& stateObj)
     {
+    }
+
+private:
+    void inputEventReceived(EventType etype, uint8_t index, int8_t value) override
+    {
+        printf("inputEventReceived %d:%s, %u, %d\n", etype, EventTypeStr(etype), index, value);
+    }
+
+    void timerEvent(QTimerEvent* const event) override
+    {
+        if (event->timerId() == timerId)
+            api.poll();
+
+        QObject::timerEvent(event);
     }
 };
 

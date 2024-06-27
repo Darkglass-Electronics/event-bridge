@@ -3,20 +3,28 @@
 
 #pragma once
 
-#include <cstdint>
+#include "input.hpp"
+
 #include <string>
 
 /**
  * TODO document me
  */
 struct EventStream {
+    struct Callbacks {
+        virtual ~Callbacks() {}
+        virtual void inputEventReceived(EventType etype, uint8_t index, int8_t value) = 0;
+    };
+
    /**
     * string describing the last error, in case any operation fails.
     */
     std::string last_error;
 
-    EventStream();
+    EventStream(Callbacks* callbacks);
     ~EventStream();
+
+    void poll();
 
 private:
     struct Impl;

@@ -67,6 +67,8 @@ target_link_libraries(event-stream
 target_sources(event-stream
   PRIVATE
     src/api.cpp
+    src/input.cpp
+    src/input-libinput.cpp
     src/main.cpp
     src/websocket.cpp
 )
