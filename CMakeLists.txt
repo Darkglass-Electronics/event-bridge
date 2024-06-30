@@ -68,6 +68,7 @@ target_sources(event-stream
   PRIVATE
     src/api.cpp
     src/input.cpp
+    src/input-gpio.cpp
     src/input-libinput.cpp
     src/main.cpp
     src/websocket.cpp
