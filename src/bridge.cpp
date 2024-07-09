@@ -1,29 +1,28 @@
 // SPDX-FileCopyrightText: 2024 Filipe Coelho <falktx@darkglass.com>
-// SPDX-License-Identifier: AGPL-3.0-or-later
+// SPDX-License-Identifier: ISC
 
-#include "api.hpp"
-#include "input.hpp"
+#include "bridge.hpp"
 
-#include <QtCore/QObject>
+#include <vector>
 
 // --------------------------------------------------------------------------------------------------------------------
 
-struct EventStream::Impl : QObject,
-                           Input::Callback
+struct EventBridge::Impl : EventInput::Callback
 {
     Callbacks* const callbacks;
-    std::vector<Input*> inputs;
+    std::vector<EventInput*> inputs;
 
-    Impl(Callbacks* const callbacks, std::string& last_error)
-        : callbacks(callbacks),
-          last_error(last_error)
+    Impl(Callbacks* const callbacks_, std::string& last_error_)
+        : callbacks(callbacks_),
+          last_error(last_error_)
     {
-        inputs.push_back(createNewInput(kInputBackendTypeLibInput));
+        if (EventInput* const input = EventInput::createNew(EventInput::kBackendTypeLibInput))
+            inputs.push_back(input);
     }
 
     ~Impl()
     {
-        for (Input* input : inputs)
+        for (EventInput* input : inputs)
             delete input;
 
         close();
@@ -35,7 +34,7 @@ struct EventStream::Impl : QObject,
 
     void poll()
     {
-        for (Input* input : inputs)
+        for (EventInput* input : inputs)
             input->poll(this);
     }
 
@@ -44,18 +43,18 @@ private:
 
     void event(EventType etype, uint8_t index, int16_t value) override
     {
-        callbacks->inputEventReceived(etype, index, value);
+        callbacks->eventReceived(etype, index, value);
     }
 };
 
 // --------------------------------------------------------------------------------------------------------------------
 
-EventStream::EventStream(Callbacks* const callbacks)
+EventBridge::EventBridge(Callbacks* const callbacks)
     : impl(new Impl(callbacks, last_error)) {}
 
-EventStream::~EventStream() { delete impl; }
+EventBridge::~EventBridge() { delete impl; }
 
-void EventStream::poll()
+void EventBridge::poll()
 {
     impl->poll();
 }

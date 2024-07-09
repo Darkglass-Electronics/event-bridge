@@ -4,6 +4,7 @@
 #pragma once
 
 #include <cstdint>
+#include <string>
 
 /**
  * The possible event types, for both receiving and sending.
@@ -35,6 +36,9 @@ enum EventType {
     kEventTypeLED,
 };
 
+/**
+ * Convenience function to convert an event type to a string.
+ */
 static constexpr inline
 const char* EventTypeStr(const EventType etype)
 {
@@ -53,12 +57,21 @@ const char* EventTypeStr(const EventType etype)
 }
 
 /**
- * Abstract Input class for sending and receiving events.
+ * Abstract Event class for sending and receiving events.
  * TODO better naming
  */
-struct Input {
+struct EventInput {
     /**
-     * Callback used for receiving events, triggered via Input::poll().
+     * The possible backends for handling events.
+     */
+    enum BackendType {
+        kBackendTypeNull,
+        kBackendTypeGPIO,
+        kBackendTypeLibInput,
+    };
+
+    /**
+     * Callback used for receiving events, triggered via poll().
      */
     struct Callback {
         /** destructor */
@@ -71,7 +84,7 @@ struct Input {
     };
 
     /** destructor */
-    virtual ~Input() {};
+    virtual ~EventInput() {};
 
     /**
      * Event polling function, to be called at regular intervals.
@@ -80,20 +93,55 @@ struct Input {
     virtual void poll(Callback* cb) = 0;
 
     /**
+     * Create a new Input class for a specified event-handling backend.
+     */
+    static EventInput* createNew(BackendType type);
+};
+
+struct EventOutput {
+    /**
+     * The possible backends for handling events.
+     */
+    enum BackendType {
+        kBackendTypeNull,
+        kBackendTypeGPIO,
+    };
+
+    /** destructor */
+    virtual ~EventOutput() {};
+
+    /**
      * Event trigger function, to be called for sending events.
      */
     virtual void event(EventType type, uint8_t index, int16_t value) = 0;
+
+    /**
+     * Create a new Input class for a specified event-handling backend.
+     */
+    static EventOutput* createNew(BackendType type);
 };
 
 /**
- * The possible backends for handling events.
+ * TODO document me
  */
-enum InputBackendType {
-    kInputBackendTypeNull,
-    kInputBackendTypeLibInput,
-};
+struct EventBridge {
+    struct Callbacks {
+        virtual ~Callbacks() {}
+        virtual void eventReceived(EventType etype, uint8_t index, int16_t value) = 0;
+    };
 
-/**
- * Create a new Input class for a specified event-handling backend.
- */
-Input* createNewInput(InputBackendType type);
+   /**
+    * string describing the last error, in case any operation fails.
+    */
+    std::string last_error;
+
+    EventBridge(Callbacks* callbacks);
+    ~EventBridge();
+
+    void poll();
+    void sendEvent(EventType etype, uint8_t index, int16_t value);
+
+private:
+    struct Impl;
+    Impl* const impl;
+};

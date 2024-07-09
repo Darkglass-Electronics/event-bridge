@@ -1,7 +1,7 @@
 // SPDX-FileCopyrightText: 2024 Filipe Coelho <falktx@darkglass.com>
 // SPDX-License-Identifier: AGPL-3.0-or-later
 
-#include "api.hpp"
+#include "bridge.hpp"
 #include "websocket.hpp"
 
 #include <QtCore/QCoreApplication>
@@ -61,11 +61,11 @@ static void copyJsonObjectValue(QJsonObject& dst, const QJsonObject& src)
 
 // --------------------------------------------------------------------------------------------------------------------
 
-struct Connector : QObject,
-                   EventStream::Callbacks,
-                   WebSocketServer::Callbacks
+struct WebSocketEventBridge : QObject,
+                              EventBridge::Callbacks,
+                              WebSocketServer::Callbacks
 {
-    EventStream api;
+    EventBridge bridge;
     WebSocketServer wsServer;
     bool ok = false;
     bool verboseLogs = false;
@@ -84,13 +84,13 @@ struct Connector : QObject,
         } leds[NUM_LEDS];
     } current;
 
-    Connector()
-        : api(this),
+    WebSocketEventBridge()
+        : bridge(this),
           wsServer(this)
     {
-        if (! api.last_error.empty())
+        if (! bridge.last_error.empty())
         {
-            fprintf(stderr, "Failed to initialize event stream connection: %s\n", api.last_error.c_str());
+            fprintf(stderr, "Failed to initialize event stream connection: %s\n", bridge.last_error.c_str());
             return;
         }
 
@@ -175,15 +175,15 @@ struct Connector : QObject,
     }
 
 private:
-    void inputEventReceived(EventType etype, uint8_t index, int16_t value) override
+    void eventReceived(EventType etype, uint8_t index, int16_t value) override
     {
-        printf("inputEventReceived %d:%s, %u, %d\n", etype, EventTypeStr(etype), index, value);
+        printf("eventReceived %d:%s, %u, %d\n", etype, EventTypeStr(etype), index, value);
     }
 
     void timerEvent(QTimerEvent* const event) override
     {
         if (event->timerId() == timerId)
-            api.poll();
+            bridge.poll();
 
         QObject::timerEvent(event);
     }
@@ -194,18 +194,18 @@ private:
 int main(int argc, char* argv[])
 {
     QCoreApplication app(argc, argv);
-    app.setApplicationName("event-stream");
+    app.setApplicationName("event-bridge");
     app.setApplicationVersion("0.0.1");
     app.setOrganizationName("Darkglass");
 
-    Connector connector;
+    WebSocketEventBridge bridge;
 
 #ifdef HAVE_SYSTEMD
-    if (connector.ok)
+    if (bridge.ok)
         sd_notify(0, "READY=1");
 #endif
 
-    return connector.ok ? app.exec() : 1;
+    return bridge.ok ? app.exec() : 1;
 }
 
 // --------------------------------------------------------------------------------------------------------------------

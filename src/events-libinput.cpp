@@ -1,7 +1,8 @@
 // SPDX-FileCopyrightText: 2024 Filipe Coelho <falktx@darkglass.com>
 // SPDX-License-Identifier: ISC
 
-#include "input.hpp"
+#include "bridge.hpp"
+#include "events.hpp"
 
 #include <cassert>
 #include <cerrno>
@@ -13,7 +14,7 @@
 
 // --------------------------------------------------------------------------------------------------------------------
 
-struct LibInput : Input {
+struct LibInput : EventInput {
     struct libinput* context = nullptr;
     struct libinput_device* device = nullptr;
     int fd = -1;
@@ -100,11 +101,6 @@ struct LibInput : Input {
         }
     }
 
-    void event(EventType, uint8_t, int16_t) override
-    {
-        // libinput is read-only, nothing to do here
-    }
-
 private:
     static int _open_restricted(const char* const path, const int flags, void*)
     {
@@ -120,7 +116,7 @@ private:
 
 // --------------------------------------------------------------------------------------------------------------------
 
-Input* createNewInput_LibInput()
+EventInput* createNewInput_LibInput()
 {
     return new LibInput();
 }

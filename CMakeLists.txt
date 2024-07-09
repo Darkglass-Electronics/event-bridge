@@ -63,7 +63,7 @@ if(PROJECT_SOURCE_DIR STREQUAL CMAKE_SOURCE_DIR)
 
   target_link_libraries(event-bridge
     PRIVATE
-      PkgConfig::libinput
+      $<$<BOOL:${libinput_FOUND}>:PkgConfig::libinput>
       $<$<BOOL:${systemd_FOUND}>:PkgConfig::systemd>
       Qt::Core
       Qt::Network
@@ -72,12 +72,12 @@ if(PROJECT_SOURCE_DIR STREQUAL CMAKE_SOURCE_DIR)
 
   target_sources(event-bridge
     PRIVATE
-      src/api.cpp
-      src/input.cpp
-      src/input-gpio.cpp
-      src/input-libinput.cpp
+      src/bridge.cpp
+      src/events.cpp
+      src/events-gpio.cpp
       src/main.cpp
       src/websocket.cpp
+      $<$<BOOL:${libinput_FOUND}>:${PROJECT_SOURCE_DIR}/src/events-libinput.cpp>
   )
 
 else()
@@ -103,9 +103,10 @@ else()
 
   target_sources(event-bridge
     INTERFACE
-      src/input.cpp
-      src/input-gpio.cpp
-      $<$<BOOL:${libinput_FOUND}>:${PROJECT_SOURCE_DIR}/src/input-libinput.cpp>
+      src/bridge.cpp
+      src/events.cpp
+      src/events-gpio.cpp
+      $<$<BOOL:${libinput_FOUND}>:${PROJECT_SOURCE_DIR}/src/events-libinput.cpp>
   )
 
 endif()

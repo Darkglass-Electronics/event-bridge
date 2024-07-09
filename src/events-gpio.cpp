@@ -1,7 +1,8 @@
 // SPDX-FileCopyrightText: 2024 Filipe Coelho <falktx@darkglass.com>
 // SPDX-License-Identifier: ISC
 
-#include "input.hpp"
+#include "bridge.hpp"
+#include "events.hpp"
 
 #include <cassert>
 #include <cstdio>
@@ -10,12 +11,16 @@
 
 // --------------------------------------------------------------------------------------------------------------------
 
-struct GPIOInput : Input {
+struct GPIOInput : EventInput {
+    const int index;
     FILE* file = nullptr;
 
-    GPIOInput()
+    GPIOInput(const int gpio, const int index_)
+        : index(index_)
     {
-        file = fopen("/sys/class/gpio/gpio1/value", "r");
+        char path[32] = {};
+        std::snprintf(path, sizeof(path) - 1, "/sys/class/gpio/gpio%d/value", gpio);
+        file = fopen(path, "r");
         assert(file != nullptr);
     }
 
@@ -32,23 +37,20 @@ struct GPIOInput : Input {
         fseek(file, 0, SEEK_SET);
         fscanf(file, "%d", &value);
 
-        cb->event(kEventTypeFootswitch, 0, value);
-    }
-
-    void event(EventType, uint8_t, int16_t) override
-    {
-        // this class is read-only, nothing to do here
+        cb->event(kEventTypeFootswitch, index, value);
     }
 };
 
 // --------------------------------------------------------------------------------------------------------------------
 
-struct GPIOOutput : Input {
+struct GPIOOutput : EventOutput {
     FILE* file = nullptr;
 
-    GPIOOutput()
+    GPIOOutput(const int gpio)
     {
-        file = fopen("/sys/class/gpio/gpio1/value", "w");
+        char path[32] = {};
+        std::snprintf(path, sizeof(path) - 1, "/sys/class/gpio/gpio%d/value", gpio);
+        file = fopen(path, "w");
         assert(file != nullptr);
     }
 
@@ -58,13 +60,7 @@ struct GPIOOutput : Input {
             fclose(file);
     }
 
-    // FIXME timer poll is bad, rework API to work via FDs directly
-    void poll(Callback* const cb) override
-    {
-        // this class is write-only, nothing to do here
-    }
-
-    void event(EventType, uint8_t, int16_t value) override
+    void event(EventType, uint8_t, const int16_t value) override
     {
         const int ivalue = value;
         fseek(file, 0, SEEK_SET);
@@ -74,14 +70,14 @@ struct GPIOOutput : Input {
 
 // --------------------------------------------------------------------------------------------------------------------
 
-Input* createNewInput_GPIOInput()
+EventInput* createNewInput_GPIO(const int gpio, const int index)
 {
-    return new GPIOInput();
+    return new GPIOInput(gpio, index);
 }
 
-Input* createNewInput_GPIOOutput()
+EventOutput* createNewOutput_GPIO(const int gpio)
 {
-    return new GPIOOutput();
+    return new GPIOOutput(gpio);
 }
 
 // --------------------------------------------------------------------------------------------------------------------
