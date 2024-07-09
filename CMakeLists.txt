@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.15)
-project(event-stream)
+project(event-bridge)
 
 set(CMAKE_POLICY_DEFAULT_CMP0025 NEW)
 set(CMAKE_POLICY_DEFAULT_CMP0063 NEW)
@@ -84,7 +84,7 @@ else()
 
   # building as interface library
   add_library(event-bridge INTERFACE)
-  # add_library(event::bridge ALIAS event-bridge)
+  add_library(event::bridge ALIAS event-bridge)
 
   target_compile_definitions(event-bridge
     INTERFACE
@@ -98,14 +98,14 @@ else()
 
   target_link_libraries(event-bridge
     INTERFACE
-      PkgConfig::libinput
+      $<$<BOOL:${libinput_FOUND}>:PkgConfig::libinput>
   )
 
   target_sources(event-bridge
     INTERFACE
       src/input.cpp
       src/input-gpio.cpp
-      $<$<BOOL:${libinput_FOUND}>:src/input-libinput.cpp>
+      $<$<BOOL:${libinput_FOUND}>:${PROJECT_SOURCE_DIR}/src/input-libinput.cpp>
   )
 
 endif()

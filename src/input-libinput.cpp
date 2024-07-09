@@ -20,6 +20,11 @@ struct LibInput : Input {
 
     LibInput()
     {
+        static constexpr const struct libinput_interface _interface = {
+            .open_restricted = _open_restricted,
+            .close_restricted = _close_restricted,
+        };
+
         context = libinput_path_create_context(&_interface, nullptr);
         assert(context);
 
@@ -111,11 +116,6 @@ private:
     {
         close(fd);
     }
-
-    static constexpr const struct libinput_interface _interface = {
-        .open_restricted = _open_restricted,
-        .close_restricted = _close_restricted,
-    };
 };
 
 // --------------------------------------------------------------------------------------------------------------------
