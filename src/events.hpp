@@ -4,8 +4,7 @@
 #pragma once
 
 /**
- * Abstract Event class for sending and receiving events.
- * TODO better naming
+ * Abstract Event class for receiving events.
  */
 struct EventInput {
     /**
@@ -40,11 +39,15 @@ struct EventInput {
     virtual void poll(Callback* cb) = 0;
 
     /**
-     * Create a new Input class for a specified event-handling backend.
+     * Entry point.
+     * Creates a new EventInput class for a specified event-handling backend.
      */
     static EventInput* createNew(BackendType type);
 };
 
+/**
+ * Abstract Event class for sending events.
+ */
 struct EventOutput {
     /**
      * The possible backends for handling events.
@@ -63,14 +66,14 @@ struct EventOutput {
     virtual void event(EventType type, uint8_t index, int16_t value) = 0;
 
     /**
-     * Create a new Input class for a specified event-handling backend.
+     * Entry point.
+     * Creates a new EventOutput class for a specified event-handling backend.
      */
     static EventOutput* createNew(BackendType type);
 };
 
 EventInput* createNewInput_GPIO(int gpio, int index);
 EventOutput* createNewOutput_GPIO(int gpio);
-
 #ifdef HAVE_LIBINPUT
 EventInput* createNewInput_LibInput();
 #endif
