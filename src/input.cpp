@@ -16,7 +16,11 @@ Input* createNewInput(const InputBackendType type)
     case kInputBackendTypeNull:
         return nullptr;
     case kInputBackendTypeLibInput:
+       #ifdef HAVE_LIBINPUT
         return createNewInput_LibInput();
+       #else
+        return nullptr;
+       #endif
     }
 
     return nullptr;

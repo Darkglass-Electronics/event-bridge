@@ -18,60 +18,96 @@ set_property(GLOBAL PROPERTY INTERPROCEDURAL_OPTIMIZATION TRUE)
 # Find deps
 
 find_package(PkgConfig REQUIRED)
-pkg_check_modules(libinput REQUIRED IMPORTED_TARGET libinput)
-pkg_check_modules(systemd IMPORTED_TARGET libsystemd)
-
-find_package(Qt6 QUIET COMPONENTS Core Network WebSockets)
-if (Qt6_FOUND)
-  add_library(Qt::Core ALIAS Qt6::Core)
-  add_library(Qt::Network ALIAS Qt6::Network)
-  add_library(Qt::WebSockets ALIAS Qt6::WebSockets)
-else()
-  find_package(Qt5 REQUIRED COMPONENTS Core Network WebSockets)
-  add_library(Qt::Core ALIAS Qt5::Core)
-  add_library(Qt::Network ALIAS Qt5::Network)
-  add_library(Qt::WebSockets ALIAS Qt5::WebSockets)
-endif()
+pkg_check_modules(libinput IMPORTED_TARGET libinput)
 
 #######################################################################################################################
-# Setup connector target
+# Setup event-bridge target
 
-add_executable(event-stream)
+# check if we are building from this project, or are imported by another
+if(PROJECT_SOURCE_DIR STREQUAL CMAKE_SOURCE_DIR)
 
-set_target_properties(event-stream
-  PROPERTIES
-    AUTOMOC ON
-    AUTOUIC ON
-    AUTORCC ON
-)
+  # building as regular application, uses Qt for event loop and notifies startup via systemd
+  pkg_check_modules(systemd IMPORTED_TARGET libsystemd)
 
-target_compile_definitions(event-stream
-  PRIVATE
-    $<$<BOOL:${systemd_FOUND}>:HAVE_SYSTEMD>
-)
+  find_package(Qt6 QUIET COMPONENTS Core Network WebSockets)
+  if (Qt6_FOUND)
+    add_library(Qt::Core ALIAS Qt6::Core)
+    add_library(Qt::Network ALIAS Qt6::Network)
+    add_library(Qt::WebSockets ALIAS Qt6::WebSockets)
+  else()
+    find_package(Qt5 REQUIRED COMPONENTS Core Network WebSockets)
+    add_library(Qt::Core ALIAS Qt5::Core)
+    add_library(Qt::Network ALIAS Qt5::Network)
+    add_library(Qt::WebSockets ALIAS Qt5::WebSockets)
+  endif()
 
-target_include_directories(event-stream
-  PRIVATE
-    src
-)
+  add_executable(event-bridge)
 
-target_link_libraries(event-stream
-  PUBLIC
-    PkgConfig::libinput
-    $<$<BOOL:${systemd_FOUND}>:PkgConfig::systemd>
-    Qt::Core
-    Qt::Network
-    Qt::WebSockets
-)
+  set_target_properties(event-bridge
+    PROPERTIES
+      AUTOMOC ON
+      AUTOUIC ON
+      AUTORCC ON
+  )
 
-target_sources(event-stream
-  PRIVATE
-    src/api.cpp
-    src/input.cpp
-    src/input-gpio.cpp
-    src/input-libinput.cpp
-    src/main.cpp
-    src/websocket.cpp
-)
+  target_compile_definitions(event-bridge
+    PRIVATE
+      $<$<BOOL:${libinput_FOUND}>:HAVE_LIBINPUT>
+      $<$<BOOL:${systemd_FOUND}>:HAVE_SYSTEMD>
+  )
+
+  target_include_directories(event-bridge
+    PRIVATE
+      src
+  )
+
+  target_link_libraries(event-bridge
+    PRIVATE
+      PkgConfig::libinput
+      $<$<BOOL:${systemd_FOUND}>:PkgConfig::systemd>
+      Qt::Core
+      Qt::Network
+      Qt::WebSockets
+  )
+
+  target_sources(event-bridge
+    PRIVATE
+      src/api.cpp
+      src/input.cpp
+      src/input-gpio.cpp
+      src/input-libinput.cpp
+      src/main.cpp
+      src/websocket.cpp
+  )
+
+else()
+
+  # building as interface library
+  add_library(event-bridge INTERFACE)
+  # add_library(event::bridge ALIAS event-bridge)
+
+  target_compile_definitions(event-bridge
+    INTERFACE
+      $<$<BOOL:${libinput_FOUND}>:HAVE_LIBINPUT>
+  )
+
+  target_include_directories(event-bridge
+    INTERFACE
+      src
+  )
+
+  target_link_libraries(event-bridge
+    INTERFACE
+      PkgConfig::libinput
+  )
+
+  target_sources(event-bridge
+    INTERFACE
+      src/input.cpp
+      src/input-gpio.cpp
+      $<$<BOOL:${libinput_FOUND}>:src/input-libinput.cpp>
+  )
+
+endif()
 
 #######################################################################################################################
