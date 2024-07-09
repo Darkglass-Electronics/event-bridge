@@ -72,7 +72,7 @@ if(PROJECT_SOURCE_DIR STREQUAL CMAKE_SOURCE_DIR)
 
   target_sources(event-bridge
     PRIVATE
-      src/bridge.cpp
+      src/event-bridge.cpp
       src/events.cpp
       src/events-gpio.cpp
       src/main.cpp
@@ -103,7 +103,7 @@ else()
 
   target_sources(event-bridge
     INTERFACE
-      src/bridge.cpp
+      src/event-bridge.cpp
       src/events.cpp
       src/events-gpio.cpp
       $<$<BOOL:${libinput_FOUND}>:${PROJECT_SOURCE_DIR}/src/events-libinput.cpp>

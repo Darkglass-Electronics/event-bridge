@@ -1,7 +1,8 @@
 // SPDX-FileCopyrightText: 2024 Filipe Coelho <falktx@darkglass.com>
 // SPDX-License-Identifier: ISC
 
-#include "bridge.hpp"
+#include "event-bridge.hpp"
+#include "events.hpp"
 
 #include <vector>
 
