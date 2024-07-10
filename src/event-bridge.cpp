@@ -18,12 +18,12 @@ static inline constexpr uint32_t event_id(const EventType etype, const uint8_t i
 
 struct EventBridge::Impl : EventInput::Callback
 {
-    Callbacks* const callbacks;
+    EventBridge::Callback* const callback;
     std::vector<EventInput*> inputs;
     std::unordered_map<uint32_t, EventOutput*> outputs;
 
-    Impl(Callbacks* const callbacks_, std::string& last_error_)
-        : callbacks(callbacks_),
+    Impl(EventBridge::Callback* const callback_, std::string& last_error_)
+        : callback(callback_),
           last_error(last_error_)
     {
         if (EventInput* const input = EventInput::createNew(EventInput::kBackendTypeLibInput))
@@ -69,14 +69,15 @@ private:
 
     void event(EventType etype, uint8_t index, int16_t value) override
     {
-        callbacks->eventReceived(etype, index, value);
+        if (callback != nullptr)
+            callback->eventReceived(etype, index, value);
     }
 };
 
 // --------------------------------------------------------------------------------------------------------------------
 
-EventBridge::EventBridge(Callbacks* const callbacks)
-    : impl(new Impl(callbacks, last_error)) {}
+EventBridge::EventBridge(Callback* const callback)
+    : impl(new Impl(callback, last_error)) {}
 
 EventBridge::~EventBridge() { delete impl; }
 

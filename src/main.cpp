@@ -62,7 +62,7 @@ static void copyJsonObjectValue(QJsonObject& dst, const QJsonObject& src)
 // --------------------------------------------------------------------------------------------------------------------
 
 struct WebSocketEventBridge : QObject,
-                              EventBridge::Callbacks,
+                              EventBridge::Callback,
                               WebSocketServer::Callbacks
 {
     EventBridge bridge;

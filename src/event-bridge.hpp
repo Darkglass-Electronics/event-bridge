@@ -26,7 +26,7 @@ enum EventType {
 
     /**
      * Footswitch event type.
-     * Works in "latched" mode, where a value of 1 means pressed and 0 means released.
+     * A value of 1 means pressed and 0 means released.
      */
     kEventTypeFootswitch,
 
@@ -57,11 +57,19 @@ const char* EventTypeStr(const EventType etype)
 }
 
 /**
- * TODO document me
+ * Event Bridge class that can both receive and send events.
  */
 struct EventBridge {
-    struct Callbacks {
-        virtual ~Callbacks() {}
+    /**
+     * Callback used for receiving events, triggered via poll().
+     */
+    struct Callback {
+        /** destructor */
+        virtual ~Callback() {}
+
+        /**
+         * Event trigger function, called when an event is received.
+         */
         virtual void eventReceived(EventType etype, uint8_t index, int16_t value) = 0;
     };
 
@@ -70,10 +78,22 @@ struct EventBridge {
     */
     std::string last_error;
 
-    EventBridge(Callbacks* callbacks);
-    ~EventBridge();
+    /** constructor, optionally passing a callback for receiving events */
+    EventBridge(Callback* callback = nullptr);
 
+    /** destructor */
+    virtual ~EventBridge();
+
+    /**
+     * Event polling function, to be called at regular intervals.
+     * Will trigger event received callbacks if there were any events during the last period.
+     * @note this function is very likely to be replaced with an FD-based event polling later on.
+     */
     void poll();
+
+    /**
+     * Event trigger function, to be called for sending events.
+     */
     bool sendEvent(EventType etype, uint8_t index, int16_t value);
 
 private:

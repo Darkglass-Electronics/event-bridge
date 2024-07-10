@@ -14,30 +14,35 @@
 struct GPIOInput : EventInput {
     const uint8_t index;
     FILE* file = nullptr;
+    int lastvalue = -1;
 
     GPIOInput(const uint16_t gpio, const uint8_t index_)
         : index(index_)
     {
         char path[32] = {};
         std::snprintf(path, sizeof(path) - 1, "/sys/class/gpio/gpio%u/value", gpio);
-        file = fopen(path, "r");
+        file = std::fopen(path, "r");
         assert(file != nullptr);
     }
 
     ~GPIOInput() override
     {
         if (file != nullptr)
-            fclose(file);
+            std::fclose(file);
     }
 
     // FIXME timer poll is bad, rework API to work via FDs directly
     void poll(Callback* const cb) override
     {
         int value = 0;
-        fseek(file, 0, SEEK_SET);
-        fscanf(file, "%d", &value);
+        std::fseek(file, 0, SEEK_SET);
+        std::fscanf(file, "%d", &value);
 
-        cb->event(kEventTypeFootswitch, index, value);
+        if (lastvalue != value)
+        {
+            lastvalue = value;
+            cb->event(kEventTypeFootswitch, index, value);
+        }
     }
 };
 
@@ -50,21 +55,21 @@ struct GPIOOutput : EventOutput {
     {
         char path[32] = {};
         std::snprintf(path, sizeof(path) - 1, "/sys/class/gpio/gpio%u/value", gpio);
-        file = fopen(path, "w");
+        file = std::fopen(path, "w");
         assert(file != nullptr);
     }
 
     ~GPIOOutput() override
     {
         if (file != nullptr)
-            fclose(file);
+            std::fclose(file);
     }
 
     void event(const int16_t value) override
     {
         const int ivalue = value;
-        fseek(file, 0, SEEK_SET);
-        fwrite(&ivalue, sizeof(int), 1, file);
+        std::fseek(file, 0, SEEK_SET);
+        std::fwrite(&ivalue, sizeof(int), 1, file);
     }
 };
 
