@@ -1,7 +1,7 @@
 // SPDX-FileCopyrightText: 2024 Filipe Coelho <falktx@darkglass.com>
 // SPDX-License-Identifier: AGPL-3.0-or-later
 
-#include "bridge.hpp"
+#include "event-bridge.hpp"
 #include "websocket.hpp"
 
 #include <QtCore/QCoreApplication>

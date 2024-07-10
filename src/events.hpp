@@ -63,17 +63,17 @@ struct EventOutput {
     /**
      * Event trigger function, to be called for sending events.
      */
-    virtual void event(EventType type, uint8_t index, int16_t value) = 0;
+    virtual void event(int16_t value) = 0;
 
     /**
      * Entry point.
      * Creates a new EventOutput class for a specified event-handling backend.
      */
-    static EventOutput* createNew(BackendType type);
+    static EventOutput* createNew(BackendType type, uint8_t index);
 };
 
-EventInput* createNewInput_GPIO(int gpio, int index);
-EventOutput* createNewOutput_GPIO(int gpio);
+EventInput* createNewInput_GPIO(uint16_t gpio, uint8_t index);
+EventOutput* createNewOutput_GPIO(uint16_t gpio);
 #ifdef HAVE_LIBINPUT
 EventInput* createNewInput_LibInput();
 #endif

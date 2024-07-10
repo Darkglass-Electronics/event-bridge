@@ -74,7 +74,7 @@ struct EventBridge {
     ~EventBridge();
 
     void poll();
-    void sendEvent(EventType etype, uint8_t index, int16_t value);
+    bool sendEvent(EventType etype, uint8_t index, int16_t value);
 
 private:
     struct Impl;

@@ -4,7 +4,15 @@
 #include "event-bridge.hpp"
 #include "events.hpp"
 
+#include <unordered_map>
 #include <vector>
+
+// --------------------------------------------------------------------------------------------------------------------
+
+static inline constexpr uint32_t event_id(const EventType etype, const uint8_t index) noexcept
+{
+    return static_cast<uint32_t>(etype) * UINT8_MAX + index;
+}
 
 // --------------------------------------------------------------------------------------------------------------------
 
@@ -12,6 +20,7 @@ struct EventBridge::Impl : EventInput::Callback
 {
     Callbacks* const callbacks;
     std::vector<EventInput*> inputs;
+    std::unordered_map<uint32_t, EventOutput*> outputs;
 
     Impl(Callbacks* const callbacks_, std::string& last_error_)
         : callbacks(callbacks_),
@@ -26,6 +35,9 @@ struct EventBridge::Impl : EventInput::Callback
         for (EventInput* input : inputs)
             delete input;
 
+        for (auto& item : outputs)
+            delete item.second;
+
         close();
     }
 
@@ -37,6 +49,19 @@ struct EventBridge::Impl : EventInput::Callback
     {
         for (EventInput* input : inputs)
             input->poll(this);
+    }
+
+    bool sendEvent(const EventType etype, const uint8_t index, const int16_t value)
+    {
+        const uint32_t id = event_id(etype, index);
+
+        for (auto& item : outputs)
+        {
+            if (item.first == id)
+                item.second->event(value);
+        }
+
+        return true;
     }
 
 private:
@@ -58,6 +83,11 @@ EventBridge::~EventBridge() { delete impl; }
 void EventBridge::poll()
 {
     impl->poll();
+}
+
+bool EventBridge::sendEvent(const EventType etype, const uint8_t index, const int16_t value)
+{
+    return impl->sendEvent(etype, index, value);
 }
 
 // --------------------------------------------------------------------------------------------------------------------

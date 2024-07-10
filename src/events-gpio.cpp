@@ -12,14 +12,14 @@
 // --------------------------------------------------------------------------------------------------------------------
 
 struct GPIOInput : EventInput {
-    const int index;
+    const uint8_t index;
     FILE* file = nullptr;
 
-    GPIOInput(const int gpio, const int index_)
+    GPIOInput(const uint16_t gpio, const uint8_t index_)
         : index(index_)
     {
         char path[32] = {};
-        std::snprintf(path, sizeof(path) - 1, "/sys/class/gpio/gpio%d/value", gpio);
+        std::snprintf(path, sizeof(path) - 1, "/sys/class/gpio/gpio%u/value", gpio);
         file = fopen(path, "r");
         assert(file != nullptr);
     }
@@ -46,10 +46,10 @@ struct GPIOInput : EventInput {
 struct GPIOOutput : EventOutput {
     FILE* file = nullptr;
 
-    GPIOOutput(const int gpio)
+    GPIOOutput(const uint16_t gpio)
     {
         char path[32] = {};
-        std::snprintf(path, sizeof(path) - 1, "/sys/class/gpio/gpio%d/value", gpio);
+        std::snprintf(path, sizeof(path) - 1, "/sys/class/gpio/gpio%u/value", gpio);
         file = fopen(path, "w");
         assert(file != nullptr);
     }
@@ -60,7 +60,7 @@ struct GPIOOutput : EventOutput {
             fclose(file);
     }
 
-    void event(EventType, uint8_t, const int16_t value) override
+    void event(const int16_t value) override
     {
         const int ivalue = value;
         fseek(file, 0, SEEK_SET);
@@ -70,12 +70,12 @@ struct GPIOOutput : EventOutput {
 
 // --------------------------------------------------------------------------------------------------------------------
 
-EventInput* createNewInput_GPIO(const int gpio, const int index)
+EventInput* createNewInput_GPIO(const uint16_t gpio, const uint8_t index)
 {
     return new GPIOInput(gpio, index);
 }
 
-EventOutput* createNewOutput_GPIO(const int gpio)
+EventOutput* createNewOutput_GPIO(const uint16_t gpio)
 {
     return new GPIOOutput(gpio);
 }

@@ -22,14 +22,14 @@ EventInput* EventInput::createNew(const BackendType type)
     return nullptr;
 }
 
-EventOutput* EventOutput::createNew(const BackendType type)
+EventOutput* EventOutput::createNew(const BackendType type, const uint8_t index)
 {
     switch (type)
     {
     case kBackendTypeNull:
         return nullptr;
     case kBackendTypeGPIO:
-        return createNewOutput_GPIO(0);
+        return createNewOutput_GPIO(index);
     }
     return nullptr;
 }
