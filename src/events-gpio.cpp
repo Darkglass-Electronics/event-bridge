@@ -19,7 +19,7 @@ struct GPIOInput : EventInput {
     GPIOInput(const uint16_t gpio, const uint8_t index_)
         : index(index_)
     {
-        char path[32] = {};
+        char path[48] = {};
         std::snprintf(path, sizeof(path) - 1, "/sys/class/gpio/gpio%u/value", gpio);
         file = std::fopen(path, "r");
         assert(file != nullptr);
@@ -53,7 +53,7 @@ struct GPIOOutput : EventOutput {
 
     GPIOOutput(const uint16_t gpio)
     {
-        char path[32] = {};
+        char path[48] = {};
         std::snprintf(path, sizeof(path) - 1, "/sys/class/gpio/gpio%u/value", gpio);
         file = std::fopen(path, "w");
         assert(file != nullptr);
