@@ -56,7 +56,7 @@ struct LibInput : EventInput {
     // FIXME timer poll is bad, rework API to work via FDs directly
     void poll(Callback* const cb) override
     {
-        static constexpr const int timeout = -1;
+        static constexpr const int timeout = 0;
 
         struct pollfd fds[1] = {};
         fds[0].fd = fd;
