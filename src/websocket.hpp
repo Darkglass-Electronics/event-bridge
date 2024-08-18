@@ -20,7 +20,6 @@ struct WebSocketServer
 
    /**
     * string describing the last error, in case any operation fails.
-    * will also be set during initialization in case of mod-host connection failure.
     */
     std::string last_error;
 

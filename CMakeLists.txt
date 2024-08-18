@@ -29,15 +29,17 @@ if(PROJECT_SOURCE_DIR STREQUAL CMAKE_SOURCE_DIR)
   # building as regular application, uses Qt for event loop and notifies startup via systemd
   pkg_check_modules(systemd IMPORTED_TARGET libsystemd)
 
-  find_package(Qt6 QUIET COMPONENTS Core Network WebSockets)
+  find_package(Qt6 QUIET COMPONENTS Core Network SerialPort WebSockets)
   if (Qt6_FOUND)
     add_library(Qt::Core ALIAS Qt6::Core)
     add_library(Qt::Network ALIAS Qt6::Network)
+    add_library(Qt::SerialPort ALIAS Qt6::SerialPort)
     add_library(Qt::WebSockets ALIAS Qt6::WebSockets)
   else()
-    find_package(Qt5 REQUIRED COMPONENTS Core Network WebSockets)
+    find_package(Qt5 REQUIRED COMPONENTS Core Network SerialPort WebSockets)
     add_library(Qt::Core ALIAS Qt5::Core)
     add_library(Qt::Network ALIAS Qt5::Network)
+    add_library(Qt::SerialPort ALIAS Qt5::SerialPort)
     add_library(Qt::WebSockets ALIAS Qt5::WebSockets)
   endif()
 
@@ -67,6 +69,7 @@ if(PROJECT_SOURCE_DIR STREQUAL CMAKE_SOURCE_DIR)
       $<$<BOOL:${systemd_FOUND}>:PkgConfig::systemd>
       Qt::Core
       Qt::Network
+      Qt::SerialPort
       Qt::WebSockets
   )
 
