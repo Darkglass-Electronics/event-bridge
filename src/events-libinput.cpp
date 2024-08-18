@@ -32,7 +32,7 @@ struct LibInput : EventInput {
         fd = libinput_get_fd(context);
         assert(fd > 0);
 
-        device = libinput_path_add_device(context, "/dev/input/by-id/usb-Adafruit_QT_Py_ESP32S3_no_psram_4F21AFD83B44-if03-event-kbd");
+        device = libinput_path_add_device(context, "/dev/input/by-path/platform-footswitches-event");
 
         if (device == nullptr)
             return;
