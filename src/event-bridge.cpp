@@ -2,7 +2,6 @@
 // SPDX-License-Identifier: ISC
 
 #include "event-bridge.hpp"
-#include "events.hpp"
 
 #include <unordered_map>
 #include <vector>
@@ -24,11 +23,7 @@ struct EventBridge::Impl : EventInput::Callback
 
     Impl(EventBridge::Callback* const callback_, std::string& last_error_)
         : callback(callback_),
-          last_error(last_error_)
-    {
-        if (EventInput* const input = EventInput::createNew(EventInput::kBackendTypeLibInput))
-            inputs.push_back(input);
-    }
+          last_error(last_error_) {}
 
     ~Impl()
     {
@@ -43,6 +38,30 @@ struct EventBridge::Impl : EventInput::Callback
 
     void close()
     {
+    }
+
+    bool addInput(const EventInput::BackendType type, const char* const path)
+    {
+        if (EventInput* const input = EventInput::createNew(type, path))
+        {
+            inputs.push_back(input);
+            return true;
+        }
+
+        return false;
+    }
+
+    bool addOutput(const EventOutput::BackendType type, const uint8_t index)
+    {
+        const uint32_t id = event_id(kEventTypeLED, index);
+
+        if (EventOutput* const output = EventOutput::createNew(type, index))
+        {
+            outputs[id] = output;
+            return true;
+        }
+
+        return false;
     }
 
     void poll()
@@ -80,6 +99,16 @@ EventBridge::EventBridge(Callback* const callback)
     : impl(new Impl(callback, last_error)) {}
 
 EventBridge::~EventBridge() { delete impl; }
+
+bool EventBridge::addInput(const EventInput::BackendType type, const char* const path)
+{
+    return impl->addInput(type, path);
+}
+
+bool EventBridge::addOutput(const EventOutput::BackendType type, const uint8_t index)
+{
+    return impl->addOutput(type, index);
+}
 
 void EventBridge::poll()
 {

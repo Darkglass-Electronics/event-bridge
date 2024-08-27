@@ -4,7 +4,7 @@
 #include "event-bridge.hpp"
 #include "events.hpp"
 
-EventInput* EventInput::createNew(const BackendType type)
+EventInput* EventInput::createNew(const BackendType type, const char* const path)
 {
     switch (type)
     {
@@ -14,7 +14,7 @@ EventInput* EventInput::createNew(const BackendType type)
         return createNewInput_GPIO(0, 0);
     case kBackendTypeLibInput:
        #ifdef HAVE_LIBINPUT
-        return createNewInput_LibInput();
+        return createNewInput_LibInput(path);
        #else
         return nullptr;
        #endif

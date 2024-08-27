@@ -3,6 +3,58 @@
 
 #pragma once
 
+#include <cstdint>
+
+/**
+ * The possible event types, for both receiving and sending.
+ */
+enum EventType {
+    /**
+     * Null event type.
+     */
+    kEventTypeNull = 0,
+
+    /**
+     * Encoder event type, an endless rotation actuator not bound to a minimum/maximum range.
+     *
+     * Positive values mean clock-wise rotation,
+     * negative values mean anti-clock-wise rotation,
+     * and 0 means "click".
+     */
+    kEventTypeEncoder,
+
+    /**
+     * Footswitch event type.
+     * A value of 1 means pressed and 0 means released.
+     */
+    kEventTypeFootswitch,
+
+    /**
+     * TBD.
+     */
+    kEventTypeLED,
+};
+
+/**
+ * Convenience function to convert an event type to a string.
+ */
+static constexpr inline
+const char* EventTypeStr(const EventType etype)
+{
+    switch (etype)
+    {
+        case kEventTypeNull:
+            return "kEventTypeNull";
+        case kEventTypeEncoder:
+            return "kEventTypeEncoder";
+        case kEventTypeFootswitch:
+            return "kEventTypeFootswitch";
+        case kEventTypeLED:
+            return "kEventTypeLED";
+    }
+    return "";
+}
+
 /**
  * Abstract Event class for receiving events.
  */
@@ -42,7 +94,7 @@ struct EventInput {
      * Entry point.
      * Creates a new EventInput class for a specified event-handling backend.
      */
-    static EventInput* createNew(BackendType type);
+    static EventInput* createNew(BackendType type, const char* path);
 };
 
 /**
@@ -75,5 +127,5 @@ struct EventOutput {
 EventInput* createNewInput_GPIO(uint16_t gpio, uint8_t index);
 EventOutput* createNewOutput_GPIO(uint16_t gpio);
 #ifdef HAVE_LIBINPUT
-EventInput* createNewInput_LibInput();
+EventInput* createNewInput_LibInput(const char* path);
 #endif
