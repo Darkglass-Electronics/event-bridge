@@ -78,6 +78,7 @@ if(PROJECT_SOURCE_DIR STREQUAL CMAKE_SOURCE_DIR)
       src/event-bridge.cpp
       src/events.cpp
       src/events-gpio.cpp
+      src/events-sysfs-led.cpp
       src/main.cpp
       src/websocket.cpp
       $<$<BOOL:${libinput_FOUND}>:${PROJECT_SOURCE_DIR}/src/events-libinput.cpp>
@@ -109,6 +110,7 @@ else()
       src/event-bridge.cpp
       src/events.cpp
       src/events-gpio.cpp
+      src/events-sysfs-led.cpp
       $<$<BOOL:${libinput_FOUND}>:${PROJECT_SOURCE_DIR}/src/events-libinput.cpp>
   )
 

@@ -6,21 +6,20 @@
 
 #include <cassert>
 #include <cstdio>
-
-// TODO test if file reopen is necessary
+#include <cstring>
 
 // --------------------------------------------------------------------------------------------------------------------
 
 struct GPIOInput : EventInput {
-    const uint8_t index;
+    const uint8_t _index;
     FILE* file = nullptr;
     int lastvalue = -1;
 
-    GPIOInput(const uint16_t gpio, const uint8_t index_)
-        : index(index_)
+    GPIOInput(const char* const id, const uint8_t index)
+        : _index(index)
     {
         char path[48] = {};
-        std::snprintf(path, sizeof(path) - 1, "/sys/class/gpio/gpio%u/value", gpio);
+        std::snprintf(path, sizeof(path) - 1, "/sys/class/gpio/gpio%s/value", id);
         file = std::fopen(path, "r");
         assert(file != nullptr);
     }
@@ -35,13 +34,17 @@ struct GPIOInput : EventInput {
     void poll(Callback* const cb) override
     {
         int value = 0;
-        std::fseek(file, 0, SEEK_SET);
-        std::fscanf(file, "%d", &value);
+
+        if (file != nullptr)
+        {
+            std::fseek(file, 0, SEEK_SET);
+            std::fscanf(file, "%d", &value);
+        }
 
         if (lastvalue != value)
         {
             lastvalue = value;
-            cb->event(kEventTypeFootswitch, index, value);
+            cb->event(kEventTypeFootswitch, _index, value);
         }
     }
 };
@@ -51,10 +54,10 @@ struct GPIOInput : EventInput {
 struct GPIOOutput : EventOutput {
     FILE* file = nullptr;
 
-    GPIOOutput(const uint16_t gpio)
+    GPIOOutput(const char* const id)
     {
         char path[48] = {};
-        std::snprintf(path, sizeof(path) - 1, "/sys/class/gpio/gpio%u/value", gpio);
+        std::snprintf(path, sizeof(path) - 1, "/sys/class/gpio/gpio%s/value", id);
         file = std::fopen(path, "w");
         assert(file != nullptr);
     }
@@ -67,22 +70,28 @@ struct GPIOOutput : EventOutput {
 
     void event(const int16_t value) override
     {
-        const int ivalue = value;
-        std::fseek(file, 0, SEEK_SET);
-        std::fwrite(&ivalue, sizeof(int), 1, file);
+        if (file != nullptr)
+        {
+            char svalue[12] = {};
+            std::snprintf(svalue, sizeof(svalue) - 1, "%d", value);
+
+            std::fseek(file, 0, SEEK_SET);
+            std::fwrite(svalue, std::strlen(svalue) + 1, 1, file);
+            std::fflush(file);
+        }
     }
 };
 
 // --------------------------------------------------------------------------------------------------------------------
 
-EventInput* createNewInput_GPIO(const uint16_t gpio, const uint8_t index)
+EventInput* createNewInput_GPIO(const char* const id, const uint8_t index)
 {
-    return new GPIOInput(gpio, index);
+    return new GPIOInput(id, index);
 }
 
-EventOutput* createNewOutput_GPIO(const uint16_t gpio)
+EventOutput* createNewOutput_GPIO(const char* const id)
 {
-    return new GPIOOutput(gpio);
+    return new GPIOOutput(id);
 }
 
 // --------------------------------------------------------------------------------------------------------------------

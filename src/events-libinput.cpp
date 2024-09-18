@@ -107,18 +107,23 @@ struct LibInput : EventInput {
                 switch (keycode)
                 {
                 case ENCODER_CLICK_START ... ENCODER_CLICK_START + NUM_ENCODERS:
-                    cb->event(kEventTypeEncoder, keycode - ENCODER_CLICK_START, 0);
+                    if (libinput_event_keyboard_get_key_state(keyevent) == LIBINPUT_KEY_STATE_PRESSED)
+                        cb->event(kEventTypeEncoder, keycode - ENCODER_CLICK_START, 0);
                     break;
+
                 case ENCODER_LEFT_START ... ENCODER_LEFT_START + NUM_ENCODERS:
                     cb->event(kEventTypeEncoder, keycode - ENCODER_LEFT_START, -1);
                     break;
+
                 case ENCODER_RIGHT_START ... ENCODER_RIGHT_START + NUM_ENCODERS:
                     cb->event(kEventTypeEncoder, keycode - ENCODER_RIGHT_START, 1);
                     break;
+
                 case FOOTSWITCH_CLICK_START ... FOOTSWITCH_CLICK_START + NUM_FOOTSWITCHES:
                     cb->event(kEventTypeFootswitch, keycode - FOOTSWITCH_CLICK_START,
                               libinput_event_keyboard_get_key_state(keyevent) == LIBINPUT_KEY_STATE_PRESSED ? 1 : 0);
                     break;
+
                 default:
                     printf("unused event keycode %d\n", keycode);
                     break;

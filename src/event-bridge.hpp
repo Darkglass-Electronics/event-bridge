@@ -37,10 +37,10 @@ struct EventBridge {
     virtual ~EventBridge();
 
     /**  */
-    bool addInput(EventInput::BackendType type, const char* path);
+    bool addInput(EventInput::BackendType type, const char* id, uint8_t index = 0);
 
     /**  */
-    bool addOutput(EventOutput::BackendType type, uint8_t index);
+    bool addOutput(EventOutput::BackendType type, const char* id, uint8_t index);
 
     /**
      * Event polling function, to be called at regular intervals.

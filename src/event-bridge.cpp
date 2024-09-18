@@ -8,6 +8,20 @@
 
 // --------------------------------------------------------------------------------------------------------------------
 
+static inline constexpr EventType event_type(const EventOutput::BackendType type) noexcept
+{
+    switch (type)
+    {
+    case EventOutput::kBackendTypeNull:
+        return kEventTypeNull;
+    case EventOutput::kBackendTypeGPIO:
+    case EventOutput::kBackendTypeSysfsLED:
+        return kEventTypeLED;
+    }
+
+    return kEventTypeNull;
+}
+
 static inline constexpr uint32_t event_id(const EventType etype, const uint8_t index) noexcept
 {
     return static_cast<uint32_t>(etype) * UINT8_MAX + index;
@@ -40,9 +54,9 @@ struct EventBridge::Impl : EventInput::Callback
     {
     }
 
-    bool addInput(const EventInput::BackendType type, const char* const path)
+    bool addInput(const EventInput::BackendType type, const char* const id, const uint8_t index)
     {
-        if (EventInput* const input = EventInput::createNew(type, path))
+        if (EventInput* const input = EventInput::createNew(type, id, index))
         {
             inputs.push_back(input);
             return true;
@@ -51,13 +65,13 @@ struct EventBridge::Impl : EventInput::Callback
         return false;
     }
 
-    bool addOutput(const EventOutput::BackendType type, const uint8_t index)
+    bool addOutput(const EventOutput::BackendType type, const char* const id, const uint8_t index)
     {
-        const uint32_t id = event_id(kEventTypeLED, index);
+        const uint32_t idx = event_id(event_type(type), index);
 
-        if (EventOutput* const output = EventOutput::createNew(type, index))
+        if (EventOutput* const output = EventOutput::createNew(type, id))
         {
-            outputs[id] = output;
+            outputs[idx] = output;
             return true;
         }
 
@@ -72,11 +86,11 @@ struct EventBridge::Impl : EventInput::Callback
 
     bool sendEvent(const EventType etype, const uint8_t index, const int16_t value)
     {
-        const uint32_t id = event_id(etype, index);
+        const uint32_t idx = event_id(etype, index);
 
         for (auto& item : outputs)
         {
-            if (item.first == id)
+            if (item.first == idx)
                 item.second->event(value);
         }
 
@@ -100,14 +114,14 @@ EventBridge::EventBridge(Callback* const callback)
 
 EventBridge::~EventBridge() { delete impl; }
 
-bool EventBridge::addInput(const EventInput::BackendType type, const char* const path)
+bool EventBridge::addInput(const EventInput::BackendType type, const char* const id, const uint8_t index)
 {
-    return impl->addInput(type, path);
+    return impl->addInput(type, id, index);
 }
 
-bool EventBridge::addOutput(const EventOutput::BackendType type, const uint8_t index)
+bool EventBridge::addOutput(const EventOutput::BackendType type, const char* const id, const uint8_t index)
 {
-    return impl->addOutput(type, index);
+    return impl->addOutput(type, id, index);
 }
 
 void EventBridge::poll()

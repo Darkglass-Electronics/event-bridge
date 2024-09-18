@@ -56,6 +56,16 @@ const char* EventTypeStr(const EventType etype)
 }
 
 /**
+ * Convenience function to convert separate r, g, b values into a single 16-bit color value.
+ * Color values must be between 0 and 0xf
+ */
+static constexpr inline
+int16_t led_rgb_value(const int8_t r, const int8_t g, const int8_t b)
+{
+    return (r & 0xf) << 8 | (g & 0xf) << 4 | (b & 0xf);
+}
+
+/**
  * Abstract Event class for receiving events.
  */
 struct EventInput {
@@ -94,7 +104,7 @@ struct EventInput {
      * Entry point.
      * Creates a new EventInput class for a specified event-handling backend.
      */
-    static EventInput* createNew(BackendType type, const char* path);
+    static EventInput* createNew(BackendType type, const char* id, uint8_t index);
 };
 
 /**
@@ -107,6 +117,7 @@ struct EventOutput {
     enum BackendType {
         kBackendTypeNull,
         kBackendTypeGPIO,
+        kBackendTypeSysfsLED,
     };
 
     /** destructor */
@@ -121,11 +132,13 @@ struct EventOutput {
      * Entry point.
      * Creates a new EventOutput class for a specified event-handling backend.
      */
-    static EventOutput* createNew(BackendType type, uint8_t index);
+    static EventOutput* createNew(BackendType type, const char* id);
 };
 
-EventInput* createNewInput_GPIO(uint16_t gpio, uint8_t index);
-EventOutput* createNewOutput_GPIO(uint16_t gpio);
+EventInput* createNewInput_GPIO(const char* id, uint8_t index);
 #ifdef HAVE_LIBINPUT
-EventInput* createNewInput_LibInput(const char* path);
+EventInput* createNewInput_LibInput(const char* id);
 #endif
+
+EventOutput* createNewOutput_GPIO(const char* id);
+EventOutput* createNewOutput_SysfsLED(const char* id);
