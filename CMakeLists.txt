@@ -19,6 +19,7 @@ set_property(GLOBAL PROPERTY INTERPROCEDURAL_OPTIMIZATION TRUE)
 
 find_package(PkgConfig REQUIRED)
 pkg_check_modules(libinput IMPORTED_TARGET libinput)
+pkg_check_modules(libserialport IMPORTED_TARGET libserialport)
 
 #######################################################################################################################
 # Setup event-bridge target
@@ -55,6 +56,7 @@ if(PROJECT_SOURCE_DIR STREQUAL CMAKE_SOURCE_DIR)
   target_compile_definitions(event-bridge
     PRIVATE
       $<$<BOOL:${libinput_FOUND}>:HAVE_LIBINPUT>
+      $<$<BOOL:${libserialport_FOUND}>:HAVE_LIBSERIALPORT>
       $<$<BOOL:${systemd_FOUND}>:HAVE_SYSTEMD>
   )
 
@@ -66,6 +68,7 @@ if(PROJECT_SOURCE_DIR STREQUAL CMAKE_SOURCE_DIR)
   target_link_libraries(event-bridge
     PRIVATE
       $<$<BOOL:${libinput_FOUND}>:PkgConfig::libinput>
+      $<$<BOOL:${libserialport_FOUND}>:PkgConfig::libserialport>
       $<$<BOOL:${systemd_FOUND}>:PkgConfig::systemd>
       Qt::Core
       Qt::Network
@@ -82,6 +85,7 @@ if(PROJECT_SOURCE_DIR STREQUAL CMAKE_SOURCE_DIR)
       src/main.cpp
       src/websocket.cpp
       $<$<BOOL:${libinput_FOUND}>:${PROJECT_SOURCE_DIR}/src/events-libinput.cpp>
+      $<$<BOOL:${libserialport_FOUND}>:${PROJECT_SOURCE_DIR}/src/events-libserialport.cpp>
   )
 
 else()
@@ -93,6 +97,7 @@ else()
   target_compile_definitions(event-bridge
     INTERFACE
       $<$<BOOL:${libinput_FOUND}>:HAVE_LIBINPUT>
+      $<$<BOOL:${libserialport_FOUND}>:HAVE_LIBSERIALPORT>
   )
 
   target_include_directories(event-bridge
@@ -103,6 +108,7 @@ else()
   target_link_libraries(event-bridge
     INTERFACE
       $<$<BOOL:${libinput_FOUND}>:PkgConfig::libinput>
+      $<$<BOOL:${libserialport_FOUND}>:PkgConfig::libserialport>
   )
 
   target_sources(event-bridge
@@ -112,6 +118,7 @@ else()
       src/events-gpio.cpp
       src/events-sysfs-led.cpp
       $<$<BOOL:${libinput_FOUND}>:${PROJECT_SOURCE_DIR}/src/events-libinput.cpp>
+      $<$<BOOL:${libserialport_FOUND}>:${PROJECT_SOURCE_DIR}/src/events-libserialport.cpp>
   )
 
 endif()

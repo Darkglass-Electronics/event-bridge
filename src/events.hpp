@@ -76,6 +76,7 @@ struct EventInput {
         kBackendTypeNull,
         kBackendTypeGPIO,
         kBackendTypeLibInput,
+        kBackendTypeLibSerialPort,
     };
 
     /**
@@ -138,6 +139,9 @@ struct EventOutput {
 EventInput* createNewInput_GPIO(const char* id, uint8_t index);
 #ifdef HAVE_LIBINPUT
 EventInput* createNewInput_LibInput(const char* id);
+#endif
+#ifdef HAVE_LIBSERIALPORT
+EventInput* createNewInput_LibSerialPort(const char* path);
 #endif
 
 EventOutput* createNewOutput_GPIO(const char* id);

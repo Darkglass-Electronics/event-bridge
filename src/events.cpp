@@ -18,6 +18,12 @@ EventInput* EventInput::createNew(const BackendType type, const char* const id, 
        #else
         return nullptr;
        #endif
+    case kBackendTypeLibSerialPort:
+       #ifdef HAVE_LIBSERIALPORT
+        return createNewInput_LibSerialPort(id);
+       #else
+        return nullptr;
+       #endif
     }
     return nullptr;
 }

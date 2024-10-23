@@ -16,7 +16,8 @@ jobs:
           - ubuntu:24.04
         pkgs:
           - libqt5serialport5-dev libqt5websockets5-dev
-          - libqt5serialport5-dev libqt5websockets5-dev libsystemd-dev
+          - libqt5serialport5-dev libqt5websockets5-dev libserialport-dev
+          - libqt5serialport5-dev libqt5websockets5-dev libserialport-dev libsystemd-dev
     runs-on: ubuntu-latest
     container:
       image: ${{ matrix.image }}
@@ -42,7 +43,8 @@ jobs:
           - ubuntu:24.04
         pkgs:
           - libqt6serialport6-dev libqt6websockets6-dev
-          - libqt6serialport6-dev libqt6websockets6-dev libsystemd-dev
+          - libqt6serialport6-dev libqt6websockets6-dev libserialport-dev
+          - libqt6serialport6-dev libqt6websockets6-dev libserialport-dev libsystemd-dev
     runs-on: ubuntu-latest
     container:
       image: ${{ matrix.image }}
