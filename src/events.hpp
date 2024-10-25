@@ -66,6 +66,15 @@ int16_t led_rgb_value(const int8_t r, const int8_t g, const int8_t b)
 }
 
 /**
+ * Convenience function to convert a 32-bit color value into 16-bit.
+ */
+static constexpr inline
+int16_t led_rgb_value(const uint32_t rgb)
+{
+    return (rgb & 0xf00000) >> 12 | (rgb & 0xf000) >> 8 | (rgb & 0xf0) >> 4;
+}
+
+/**
  * Abstract Event class for receiving events.
  */
 struct EventInput {
