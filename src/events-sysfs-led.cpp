@@ -57,7 +57,7 @@ struct SysfsLED : EventOutput {
 
             if (files[i] != nullptr)
             {
-                const int ivalue = static_cast<float>(values[i]) / 0xf * maxBrightness[i];
+                const int ivalue = static_cast<float>(values[i]) / 0xf * maxBrightness[i] * 0.1f;
                 std::snprintf(svalue, sizeof(svalue) - 1, "%d", ivalue);
 
                 std::fseek(files[i], 0, SEEK_SET);
