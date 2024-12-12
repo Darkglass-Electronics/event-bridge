@@ -84,7 +84,7 @@ struct EventBridge::Impl : EventInput::Callback
             input->poll(this);
     }
 
-    bool sendEvent(const EventType etype, const uint8_t index, const int16_t value)
+    bool sendEvent(const EventType etype, const EventValue evalue, const uint8_t index, const int16_t value)
     {
         const uint32_t idx = event_id(etype, index);
 
@@ -100,10 +100,10 @@ struct EventBridge::Impl : EventInput::Callback
 private:
     std::string& last_error;
 
-    void event(EventType etype, uint8_t index, int16_t value) override
+    void event(const EventType etype, const EventValue evalue, const uint8_t index, const int16_t value) override
     {
         if (callback != nullptr)
-            callback->eventReceived(etype, index, value);
+            callback->eventReceived(etype, evalue, index, value);
     }
 };
 
@@ -129,9 +129,9 @@ void EventBridge::poll()
     impl->poll();
 }
 
-bool EventBridge::sendEvent(const EventType etype, const uint8_t index, const int16_t value)
+bool EventBridge::sendEvent(const EventType etype, const EventValue evalue, const uint8_t index, const int16_t value)
 {
-    return impl->sendEvent(etype, index, value);
+    return impl->sendEvent(etype, evalue, index, value);
 }
 
 // --------------------------------------------------------------------------------------------------------------------

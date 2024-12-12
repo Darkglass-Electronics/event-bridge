@@ -6,26 +6,50 @@
 #include <cstdint>
 
 /**
+ * Default time in milliseconds for a long-press event.
+ */
+#ifndef EVENT_BRIDGE_LONG_PRESS_TIME
+#define EVENT_BRIDGE_LONG_PRESS_TIME 500
+#endif
+
+/**
+ * Default number of encoders to use.
+ */
+#ifndef NUM_ENCODERS
+#define NUM_ENCODERS 6
+#endif
+
+/**
+ * Default number of footswitches to use.
+ */
+#ifndef NUM_FOOTSWITCHES
+#define NUM_FOOTSWITCHES 3
+#endif
+
+/**
+ * Default number of LEDs to use.
+ */
+#ifndef NUM_LEDS
+#define NUM_LEDS 3
+#endif
+
+/**
  * The possible event types, for both receiving and sending.
+ * @see EventValue
  */
 enum EventType {
-    /**
-     * Null event type.
-     */
+    /** Null event type. */
     kEventTypeNull = 0,
 
     /**
-     * Encoder event type, an endless rotation actuator not bound to a minimum/maximum range.
-     *
-     * Positive values mean clock-wise rotation,
-     * negative values mean anti-clock-wise rotation,
-     * and 0 means "click".
+     * Encoder rotation event type, an endless rotation actuator not bound to a minimum/maximum range.
+     * Positive values mean clock-wise rotation, negative values mean anti-clock-wise rotation.
      */
     kEventTypeEncoder,
 
     /**
      * Footswitch event type.
-     * A value of 1 means pressed and 0 means released.
+     * @see EventValue
      */
     kEventTypeFootswitch,
 
@@ -36,6 +60,21 @@ enum EventType {
 };
 
 /**
+ * The possible event values.
+ * @see EventType
+ */
+enum EventValue {
+    /** Footswitch is "up" or released. */
+    kEventValueReleased = 0,
+
+    /** Footswitch is "down" or pressed. */
+    kEventValuePressed,
+
+    /** Footswitch has been pressed for a "long" time, defined by @a EVENT_BRIDGE_LONG_PRESS_TIME. */
+    kEventValueLongPressed,
+};
+
+/**
  * Convenience function to convert an event type to a string.
  */
 static constexpr inline
@@ -43,14 +82,32 @@ const char* EventTypeStr(const EventType etype)
 {
     switch (etype)
     {
-        case kEventTypeNull:
-            return "kEventTypeNull";
-        case kEventTypeEncoder:
-            return "kEventTypeEncoder";
-        case kEventTypeFootswitch:
-            return "kEventTypeFootswitch";
-        case kEventTypeLED:
-            return "kEventTypeLED";
+    case kEventTypeNull:
+        return "kEventTypeNull";
+    case kEventTypeEncoder:
+        return "kEventTypeEncoder";
+    case kEventTypeFootswitch:
+        return "kEventTypeFootswitch";
+    case kEventTypeLED:
+        return "kEventTypeLED";
+    }
+    return "";
+}
+
+/**
+ * Convenience function to convert an event value to a string.
+ */
+static constexpr inline
+const char* EventValueStr(const EventValue evalue)
+{
+    switch (evalue)
+    {
+    case kEventValueReleased:
+        return "kEventValueReleased";
+    case kEventValuePressed:
+        return "kEventValuePressed";
+    case kEventValueLongPressed:
+        return "kEventValueLongPressed";
     }
     return "";
 }
@@ -98,7 +155,7 @@ struct EventInput {
         /**
          * Event trigger function, called when an event is received.
          */
-        virtual void event(EventType type, uint8_t index, int16_t value) = 0;
+        virtual void event(EventType etype, EventValue evalue, uint8_t index, int16_t value) = 0;
     };
 
     /** destructor */

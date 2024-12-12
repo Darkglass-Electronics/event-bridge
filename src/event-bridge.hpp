@@ -22,7 +22,7 @@ struct EventBridge {
         /**
          * Event trigger function, called when an event is received.
          */
-        virtual void eventReceived(EventType etype, uint8_t index, int16_t value) = 0;
+        virtual void eventReceived(EventType etype, EventValue evalue, uint8_t index, int16_t value) = 0;
     };
 
    /**
@@ -52,7 +52,7 @@ struct EventBridge {
     /**
      * Event trigger function, to be called for sending events.
      */
-    bool sendEvent(EventType etype, uint8_t index, int16_t value);
+    bool sendEvent(EventType etype, EventValue evalue, uint8_t index, int16_t value);
 
 private:
     struct Impl;

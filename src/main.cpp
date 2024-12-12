@@ -15,25 +15,6 @@
 #endif
 
 // --------------------------------------------------------------------------------------------------------------------
-// default configuration
-
-#ifndef NUM_ENCODERS
-#define NUM_ENCODERS 6
-#endif
-
-#ifndef NUM_FOOTSWITCHES
-#define NUM_FOOTSWITCHES 3
-#endif
-
-#ifndef NUM_KNOBS
-#define NUM_KNOBS 0
-#endif
-
-#ifndef NUM_LEDS
-#define NUM_LEDS 0
-#endif
-
-// --------------------------------------------------------------------------------------------------------------------
 // utility function that copies nested objects without deleting old values
 
 static void copyJsonObjectValue(QJsonObject& dst, const QJsonObject& src)
@@ -78,8 +59,6 @@ struct WebSocketEventBridge : QObject,
         } encoders[NUM_ENCODERS];
         struct {
         } footswitches[NUM_FOOTSWITCHES];
-        struct {
-        } knobs[NUM_KNOBS];
         struct {
         } leds[NUM_LEDS];
     } current;
@@ -132,11 +111,6 @@ struct WebSocketEventBridge : QObject,
             // TODO fetch and init footswitches
         }
 
-        if (! stateJson.contains("knobs"))
-        {
-            // TODO fetch and init knobs
-        }
-
         if (! stateJson.contains("leds"))
         {
             // TODO fetch and init leds
@@ -175,9 +149,10 @@ struct WebSocketEventBridge : QObject,
     }
 
 private:
-    void eventReceived(EventType etype, uint8_t index, int16_t value) override
+    void eventReceived(EventType etype, EventValue evalue, uint8_t index, int16_t value) override
     {
-        printf("eventReceived %d:%s, %u, %d\n", etype, EventTypeStr(etype), index, value);
+        printf("eventReceived %d:%s, %d:%s, %u, %d\n",
+               etype, EventTypeStr(etype), evalue, EventValueStr(evalue), index, value);
     }
 
     void timerEvent(QTimerEvent* const event) override
@@ -195,7 +170,7 @@ int main(int argc, char* argv[])
 {
     QCoreApplication app(argc, argv);
     app.setApplicationName("event-bridge");
-    app.setApplicationVersion("0.0.1");
+    app.setApplicationVersion("0.0.2");
     app.setOrganizationName("Darkglass");
 
     WebSocketEventBridge bridge;

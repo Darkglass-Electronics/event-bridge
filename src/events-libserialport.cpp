@@ -18,6 +18,7 @@
 
 struct LibSerialPort : EventInput {
     struct sp_port* serialport = nullptr;
+    EventValue state[NUM_ENCODERS] = {};
 
     LibSerialPort(const char* const path, const int baudrate = 115200)
     {
@@ -98,24 +99,33 @@ struct LibSerialPort : EventInput {
             assert((c >= 'A' && c <= 'Z') || (c >= 'a' && c <= 'z'));
             assert(buf[1] == ' ');
 
+            uint8_t index;
+            int16_t value;
+
             if (c >= 'A' && c <= 'Z')
             {
                 assert(buf[2] == '-' || buf[2] == '+');
 
                 buf[offs] = '\0';
-                cb->event(kEventTypeEncoder, c - 'A', std::atoi(buf + 2));
+                index = c - 'A';
+                assert(index < NUM_ENCODERS);
+                value = std::atoi(buf + 2);
             }
-            else if (c >= 'a' && c <= 'z')
+            else // if (c >= 'a' && c <= 'z')
             {
                 assert(buf[2] == '0' || buf[2] == '1');
 
-                // FIXME no encoder release event
-                if (buf[2] == '1')
-                    cb->event(kEventTypeEncoder, c - 'a', 0);
+                index = c - 'a';
+                assert(index < NUM_ENCODERS);
+                value = 0;
+                state[index] = buf[2] == '1' ? kEventValuePressed : kEventValueReleased;
             }
 
+            cb->event(kEventTypeEncoder, state[index], index, value);
             break;
         }
+
+        // TODO long press
     }
 };
 

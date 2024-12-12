@@ -14,14 +14,6 @@
 
 // --------------------------------------------------------------------------------------------------------------------
 
-#ifndef NUM_ENCODERS
-#define NUM_ENCODERS 6
-#endif
-
-#ifndef NUM_FOOTSWITCHES
-#define NUM_FOOTSWITCHES 3
-#endif
-
 #ifndef ENCODER_CLICK_START
 #define ENCODER_CLICK_START 16
 #endif
@@ -44,6 +36,7 @@ struct LibInput : EventInput {
     struct libinput* context = nullptr;
     struct libinput_device* device = nullptr;
     int fd = -1;
+    EventValue state[NUM_ENCODERS + NUM_FOOTSWITCHES] = {};
 
     LibInput(const char* const path)
     {
@@ -103,25 +96,34 @@ struct LibInput : EventInput {
             {
                 struct libinput_event_keyboard* const keyevent = libinput_event_get_keyboard_event(event);
                 const uint32_t keycode = libinput_event_keyboard_get_key(keyevent);
+                uint8_t index;
 
                 switch (keycode)
                 {
                 case ENCODER_CLICK_START ... ENCODER_CLICK_START + NUM_ENCODERS:
-                    if (libinput_event_keyboard_get_key_state(keyevent) == LIBINPUT_KEY_STATE_PRESSED)
-                        cb->event(kEventTypeEncoder, keycode - ENCODER_CLICK_START, 0);
+                    index = keycode - ENCODER_CLICK_START;
+                    state[index] = libinput_event_keyboard_get_key_state(keyevent) == LIBINPUT_KEY_STATE_PRESSED
+                                 ? kEventValuePressed
+                                 : kEventValueReleased;
+                    cb->event(kEventTypeEncoder, state[index], index, 0);
                     break;
 
                 case ENCODER_LEFT_START ... ENCODER_LEFT_START + NUM_ENCODERS:
-                    cb->event(kEventTypeEncoder, keycode - ENCODER_LEFT_START, -1);
+                    index = keycode - ENCODER_LEFT_START;
+                    cb->event(kEventTypeEncoder, state[index], index, -1);
                     break;
 
                 case ENCODER_RIGHT_START ... ENCODER_RIGHT_START + NUM_ENCODERS:
-                    cb->event(kEventTypeEncoder, keycode - ENCODER_RIGHT_START, 1);
+                    index = keycode - ENCODER_RIGHT_START;
+                    cb->event(kEventTypeEncoder, state[index], index, 1);
                     break;
 
                 case FOOTSWITCH_CLICK_START ... FOOTSWITCH_CLICK_START + NUM_FOOTSWITCHES:
-                    cb->event(kEventTypeFootswitch, keycode - FOOTSWITCH_CLICK_START,
-                              libinput_event_keyboard_get_key_state(keyevent) == LIBINPUT_KEY_STATE_PRESSED ? 1 : 0);
+                    index = keycode - FOOTSWITCH_CLICK_START;
+                    state[NUM_ENCODERS + index] = libinput_event_keyboard_get_key_state(keyevent) == LIBINPUT_KEY_STATE_PRESSED
+                                                ? kEventValuePressed
+                                                : kEventValueReleased;
+                    cb->event(kEventTypeFootswitch, state[NUM_ENCODERS + index], index, 0);
                     break;
 
                 default:
@@ -132,6 +134,8 @@ struct LibInput : EventInput {
 
             libinput_event_destroy(event);
         }
+
+        // TODO long press
     }
 
 private:
