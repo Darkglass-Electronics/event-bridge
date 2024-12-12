@@ -6,6 +6,7 @@
 
 #include <cassert>
 #include <cstdio>
+#include <ctime>
 
 #include <libserialport.h>
 

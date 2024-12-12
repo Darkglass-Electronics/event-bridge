@@ -7,6 +7,7 @@
 #include <cassert>
 #include <cerrno>
 #include <cstdio>
+#include <ctime>
 #include <fcntl.h>
 #include <libinput.h>
 #include <poll.h>
