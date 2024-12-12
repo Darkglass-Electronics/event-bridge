@@ -58,6 +58,12 @@ struct LibSerialPort : EventInput {
         sp_free_port(serialport);
     }
 
+    void clear() override
+    {
+        for (int i = 0; i < sizeof(state)/sizeof(state[0]); ++i)
+            state[i] = kEventValueReleased;
+    }
+
     // FIXME read using thread?
     void poll(Callback* const cb) override
     {

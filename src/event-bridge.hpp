@@ -43,6 +43,11 @@ struct EventBridge {
     bool addOutput(EventOutput::BackendType type, const char* id, uint8_t index);
 
     /**
+     * Clear current state, for preventing unwanted long-press events.
+     */
+    void clear();
+
+    /**
      * Event polling function, to be called at regular intervals.
      * Will trigger event received callbacks if there were any events during the last period.
      * @note this function is very likely to be replaced with an FD-based event polling later on.

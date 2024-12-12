@@ -162,6 +162,11 @@ struct EventInput {
     virtual ~EventInput() {};
 
     /**
+     * Clear current state, for preventing unwanted long-press events.
+     */
+    virtual void clear() {}
+
+    /**
      * Event polling function, to be called at regular intervals.
      * @note this function is very likely to be replaced with an FD-based event polling later on.
      */

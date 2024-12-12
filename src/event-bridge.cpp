@@ -78,6 +78,12 @@ struct EventBridge::Impl : EventInput::Callback
         return false;
     }
 
+    void clear()
+    {
+        for (EventInput* input : inputs)
+            input->clear();
+    }
+
     void poll()
     {
         for (EventInput* input : inputs)
@@ -122,6 +128,11 @@ bool EventBridge::addInput(const EventInput::BackendType type, const char* const
 bool EventBridge::addOutput(const EventOutput::BackendType type, const char* const id, const uint8_t index)
 {
     return impl->addOutput(type, id, index);
+}
+
+void EventBridge::clear()
+{
+    impl->clear();
 }
 
 void EventBridge::poll()

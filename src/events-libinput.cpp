@@ -72,6 +72,12 @@ struct LibInput : EventInput {
             libinput_unref(context);
     }
 
+    void clear() override
+    {
+        for (int i = 0; i < sizeof(state)/sizeof(state[0]); ++i)
+            state[i] = kEventValueReleased;
+    }
+
     // FIXME timer poll is bad, rework API to work via FDs directly
     void poll(Callback* const cb) override
     {
