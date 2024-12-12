@@ -149,10 +149,10 @@ struct WebSocketEventBridge : QObject,
     }
 
 private:
-    void eventReceived(EventType etype, EventValue evalue, uint8_t index, int16_t value) override
+    void eventReceived(EventType etype, EventState state, uint8_t index, int16_t value) override
     {
         printf("eventReceived %d:%s, %d:%s, %u, %d\n",
-               etype, EventTypeStr(etype), evalue, EventValueStr(evalue), index, value);
+               etype, EventTypeStr(etype), state, EventStateStr(state), index, value);
     }
 
     void timerEvent(QTimerEvent* const event) override

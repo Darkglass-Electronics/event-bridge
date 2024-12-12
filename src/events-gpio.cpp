@@ -44,7 +44,7 @@ struct GPIOInput : EventInput {
         if (lastvalue != value)
         {
             lastvalue = value;
-            cb->event(kEventTypeFootswitch, value != 0 ? kEventValuePressed : kEventValueReleased, _index, 0);
+            cb->event(kEventTypeFootswitch, value != 0 ? kEventStatePressed : kEventStateReleased, _index, 0);
         }
 
         // TODO long press

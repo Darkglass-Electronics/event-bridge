@@ -35,7 +35,7 @@
 
 /**
  * The possible event types, for both receiving and sending.
- * @see EventValue
+ * @see EventState
  */
 enum EventType {
     /** Null event type. */
@@ -47,31 +47,26 @@ enum EventType {
      */
     kEventTypeEncoder,
 
-    /**
-     * Footswitch event type.
-     * @see EventValue
-     */
+    /** Footswitch event type. */
     kEventTypeFootswitch,
 
-    /**
-     * TBD.
-     */
+    /** TBD. */
     kEventTypeLED,
 };
 
 /**
- * The possible event values.
+ * The possible event states.
  * @see EventType
  */
-enum EventValue {
+enum EventState {
     /** Footswitch is "up" or released. */
-    kEventValueReleased = 0,
+    kEventStateReleased = 0,
 
     /** Footswitch is "down" or pressed. */
-    kEventValuePressed,
+    kEventStatePressed,
 
     /** Footswitch has been pressed for a "long" time, defined by @a EVENT_BRIDGE_LONG_PRESS_TIME. */
-    kEventValueLongPressed,
+    kEventStateLongPressed,
 };
 
 /**
@@ -98,16 +93,16 @@ const char* EventTypeStr(const EventType etype)
  * Convenience function to convert an event value to a string.
  */
 static constexpr inline
-const char* EventValueStr(const EventValue evalue)
+const char* EventStateStr(const EventState state)
 {
-    switch (evalue)
+    switch (state)
     {
-    case kEventValueReleased:
-        return "kEventValueReleased";
-    case kEventValuePressed:
-        return "kEventValuePressed";
-    case kEventValueLongPressed:
-        return "kEventValueLongPressed";
+    case kEventStateReleased:
+        return "kEventStateReleased";
+    case kEventStatePressed:
+        return "kEventStatePressed";
+    case kEventStateLongPressed:
+        return "kEventStateLongPressed";
     }
     return "";
 }
@@ -155,7 +150,7 @@ struct EventInput {
         /**
          * Event trigger function, called when an event is received.
          */
-        virtual void event(EventType etype, EventValue evalue, uint8_t index, int16_t value) = 0;
+        virtual void event(EventType etype, EventState evalue, uint8_t index, int16_t value) = 0;
     };
 
     /** destructor */

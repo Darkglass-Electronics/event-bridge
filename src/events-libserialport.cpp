@@ -16,9 +16,31 @@
 
 // --------------------------------------------------------------------------------------------------------------------
 
+static uint32_t get_time_ms() noexcept
+{
+    static struct {
+        timespec ts;
+        int r;
+        uint32_t ms;
+    } s = {
+        {},
+        clock_gettime(CLOCK_MONOTONIC_RAW, &s.ts),
+        static_cast<uint32_t>(s.ts.tv_sec * 1000 + s.ts.tv_nsec / 1000000)
+    };
+
+    timespec ts;
+    clock_gettime(CLOCK_MONOTONIC_RAW, &ts);
+    return (ts.tv_sec * 1000 + ts.tv_nsec / 1000000) - s.ms;
+}
+
+// --------------------------------------------------------------------------------------------------------------------
+
 struct LibSerialPort : EventInput {
     struct sp_port* serialport = nullptr;
-    EventValue state[NUM_ENCODERS] = {};
+    struct {
+        uint32_t time;
+        EventState value;
+    } state[NUM_ENCODERS] = {};
 
     LibSerialPort(const char* const path, const int baudrate = 115200)
     {
@@ -61,7 +83,10 @@ struct LibSerialPort : EventInput {
     void clear() override
     {
         for (int i = 0; i < sizeof(state)/sizeof(state[0]); ++i)
-            state[i] = kEventValueReleased;
+        {
+            state[i].time = 0;
+            state[i].value = kEventStateReleased;
+        }
     }
 
     // FIXME read using thread?
@@ -74,7 +99,10 @@ struct LibSerialPort : EventInput {
         ret = sp_blocking_read(serialport, buf, 2, SP_BLOCKING_READ_TIMEOUT);
 
         if (ret <= 0)
+        {
+            updateLongPresses(cb);
             return;
+        }
 
         // shift by 1 byte if message starts with a newline
         if (ret == 2 && buf[0] == '\n' && buf[1] != '\n')
@@ -85,13 +113,19 @@ struct LibSerialPort : EventInput {
 
         // message was read in full, likely starting up and caught unflushed messages, we can stop here
         if (ret == 2 && buf[1] == '\n')
+        {
+            updateLongPresses(cb);
             return;
+        }
 
         for (offs = ret; offs < sizeof(buf); ++offs)
         {
             ret = sp_blocking_read(serialport, buf + offs, 1, SP_BLOCKING_READ_TIMEOUT);
             if (ret != 1)
+            {
+                updateLongPresses(cb);
                 return;
+            }
 
             // still reading
             if (buf[offs] != '\n')
@@ -124,14 +158,49 @@ struct LibSerialPort : EventInput {
                 index = c - 'a';
                 assert(index < NUM_ENCODERS);
                 value = 0;
-                state[index] = buf[2] == '1' ? kEventValuePressed : kEventValueReleased;
+                if (buf[2] == '1')
+                {
+                    state[index].time = get_time_ms();
+                    state[index].value = kEventStatePressed;
+                }
+                else
+                {
+                    state[index].time = 0;
+                    state[index].value = kEventStateReleased;
+                }
             }
 
-            cb->event(kEventTypeEncoder, state[index], index, value);
+            cb->event(kEventTypeEncoder, state[index].value, index, value);
             break;
         }
 
-        // TODO long press
+        updateLongPresses(cb);
+    }
+
+    void updateLongPresses(Callback* const cb)
+    {
+        // only ask for current time as needed
+        uint32_t now = 0;
+
+        for (int i = 0; i < sizeof(state)/sizeof(state[0]); ++i)
+        {
+            if (state[i].value != kEventStatePressed)
+                continue;
+
+            if (now == 0)
+                now = get_time_ms();
+
+            if (now - state[i].time < EVENT_BRIDGE_LONG_PRESS_TIME)
+                continue;
+
+            state[i].time = 0;
+            state[i].value = kEventStateLongPressed;
+
+            if (i < NUM_ENCODERS)
+                cb->event(kEventTypeEncoder, state[i].value, i, 0);
+            else
+                cb->event(kEventTypeFootswitch, state[i].value, i - NUM_ENCODERS, 0);
+        }
     }
 };
 
