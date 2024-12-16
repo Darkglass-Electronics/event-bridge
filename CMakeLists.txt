@@ -18,6 +18,7 @@ set_property(GLOBAL PROPERTY INTERPROCEDURAL_OPTIMIZATION TRUE)
 # Find deps
 
 find_package(PkgConfig REQUIRED)
+find_package(Threads REQUIRED)
 pkg_check_modules(libinput IMPORTED_TARGET libinput)
 pkg_check_modules(libserialport IMPORTED_TARGET libserialport)
 
@@ -70,6 +71,7 @@ if(PROJECT_SOURCE_DIR STREQUAL CMAKE_SOURCE_DIR)
       $<$<BOOL:${libinput_FOUND}>:PkgConfig::libinput>
       $<$<BOOL:${libserialport_FOUND}>:PkgConfig::libserialport>
       $<$<BOOL:${systemd_FOUND}>:PkgConfig::systemd>
+      ${CMAKE_THREAD_LIBS_INIT}
       Qt::Core
       Qt::Network
       Qt::SerialPort
@@ -107,6 +109,7 @@ else()
 
   target_link_libraries(event-bridge
     INTERFACE
+      ${CMAKE_THREAD_LIBS_INIT}
       $<$<BOOL:${libinput_FOUND}>:PkgConfig::libinput>
       $<$<BOOL:${libserialport_FOUND}>:PkgConfig::libserialport>
   )
