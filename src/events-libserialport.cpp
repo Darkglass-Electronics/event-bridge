@@ -8,12 +8,8 @@
 #include <cstdio>
 #include <ctime>
 
+#include <pthread.h>
 #include <libserialport.h>
-
-// --------------------------------------------------------------------------------------------------------------------
-
-// in ms
-#define SP_BLOCKING_READ_TIMEOUT 1
 
 // --------------------------------------------------------------------------------------------------------------------
 
@@ -39,9 +35,20 @@ static uint32_t get_time_ms() noexcept
 struct LibSerialPort : EventInput {
     struct sp_port* serialport = nullptr;
     struct {
-        uint32_t time;
-        EventState value;
-    } state[NUM_ENCODERS] = {};
+        // live state
+        uint32_t time = 0;
+        EventState state = kEventStateReleased;
+        // accumulated state
+        bool changed = false;
+        int16_t value = 0;
+    } state[NUM_ENCODERS];
+
+    pthread_mutex_t lock = {};
+
+    struct {
+        pthread_t handle = {};
+        bool running = false;
+    } thread;
 
     LibSerialPort(const char* const path, const int baudrate = 115200)
     {
@@ -70,6 +77,12 @@ struct LibSerialPort : EventInput {
 
         // configure serial port
         sp_set_baudrate(serialport, baudrate);
+
+        pthread_mutex_init(&lock, nullptr);
+
+        thread.running = true;
+        if (pthread_create(&thread.handle, nullptr, _run, this) != 0)
+            thread.running = false;
     }
 
     ~LibSerialPort() override
@@ -77,31 +90,82 @@ struct LibSerialPort : EventInput {
         if (serialport == nullptr)
             return;
 
+        if (thread.running)
+        {
+            thread.running = false;
+            pthread_join(thread.handle, nullptr);
+        }
+
+        pthread_mutex_destroy(&lock);
+
         sp_close(serialport);
         sp_free_port(serialport);
     }
 
     void clear() override
     {
+        pthread_mutex_lock(&lock);
+
         for (int i = 0; i < sizeof(state)/sizeof(state[0]); ++i)
         {
             state[i].time = 0;
-            state[i].value = kEventStateReleased;
+            state[i].state = kEventStateReleased;
+            state[i].changed = false;
+            state[i].value = 0;
         }
+
+        pthread_mutex_unlock(&lock);
     }
 
-    // FIXME read using thread?
     void poll(Callback* const cb) override
+    {
+        if (! thread.running)
+            readSerialData(1);
+
+        pthread_mutex_lock(&lock);
+
+        for (int i = 0; i < sizeof(state)/sizeof(state[0]); ++i)
+        {
+            if (! state[i].changed)
+                continue;
+
+            const int16_t value = state[i].value;
+            state[i].changed = false;
+            state[i].value = 0;
+
+            if (i < NUM_ENCODERS)
+                cb->event(kEventTypeEncoder, state[i].state, i, value);
+            else
+                cb->event(kEventTypeFootswitch, state[i].state, i - NUM_ENCODERS, value);
+        }
+
+        pthread_mutex_unlock(&lock);
+    }
+
+private:
+    static void* _run(void* const arg)
+    {
+        static_cast<LibSerialPort*>(arg)->run();
+        return nullptr;
+    }
+
+    void run()
+    {
+        while (thread.running)
+            readSerialData(100);
+    }
+
+    void readSerialData(const uint32_t timeout)
     {
         int ret;
         unsigned int offs = 0;
         char buf[0xff];
 
-        ret = sp_blocking_read(serialport, buf, 2, SP_BLOCKING_READ_TIMEOUT);
+        ret = sp_blocking_read(serialport, buf, 2, timeout);
 
         if (ret <= 0)
         {
-            updateLongPresses(cb);
+            updateLongPresses();
             return;
         }
 
@@ -115,16 +179,16 @@ struct LibSerialPort : EventInput {
         // message was read in full, likely starting up and caught unflushed messages, we can stop here
         if (ret == 2 && buf[1] == '\n')
         {
-            updateLongPresses(cb);
+            updateLongPresses();
             return;
         }
 
         for (offs = ret; offs < sizeof(buf); ++offs)
         {
-            ret = sp_blocking_read(serialport, buf + offs, 1, SP_BLOCKING_READ_TIMEOUT);
+            ret = sp_blocking_read(serialport, buf + offs, 1, timeout);
             if (ret != 1)
             {
-                updateLongPresses(cb);
+                updateLongPresses();
                 return;
             }
 
@@ -151,6 +215,8 @@ struct LibSerialPort : EventInput {
                 index = c - 'A';
                 assert(index < NUM_ENCODERS);
                 value = std::atoi(buf + 2);
+
+                pthread_mutex_lock(&lock);
             }
             else // if (c >= 'a' && c <= 'z')
             {
@@ -159,29 +225,37 @@ struct LibSerialPort : EventInput {
                 index = c - 'a';
                 assert(index < NUM_ENCODERS);
                 value = 0;
+
+                pthread_mutex_lock(&lock);
+
                 if (buf[2] == '1')
                 {
                     state[index].time = get_time_ms();
-                    state[index].value = kEventStatePressed;
+                    state[index].state = kEventStatePressed;
                 }
                 else
                 {
                     state[index].time = 0;
-                    state[index].value = kEventStateReleased;
+                    state[index].state = kEventStateReleased;
                 }
             }
 
-            cb->event(kEventTypeEncoder, state[index].value, index, value);
+            state[index].value += value;
+            state[index].changed = true;
+
+            pthread_mutex_unlock(&lock);
             break;
         }
 
-        updateLongPresses(cb);
+        updateLongPresses();
     }
 
-    void updateLongPresses(Callback* const cb)
+    void updateLongPresses()
     {
         // only ask for current time as needed
         uint32_t now = 0;
+
+        pthread_mutex_lock(&lock);
 
         for (int i = 0; i < sizeof(state)/sizeof(state[0]); ++i)
         {
@@ -195,13 +269,11 @@ struct LibSerialPort : EventInput {
                 continue;
 
             state[i].time = 0;
-            state[i].value = kEventStateLongPressed;
-
-            if (i < NUM_ENCODERS)
-                cb->event(kEventTypeEncoder, state[i].value, i, 0);
-            else
-                cb->event(kEventTypeFootswitch, state[i].value, i - NUM_ENCODERS, 0);
+            state[i].state = kEventStateLongPressed;
+            state[i].changed = true;
         }
+
+        pthread_mutex_unlock(&lock);
     }
 };
 
