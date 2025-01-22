@@ -40,7 +40,7 @@ struct LibSerialPort : EventInput {
         EventState state = kEventStateReleased;
         // accumulated state
         bool changed = false;
-        int16_t value = 0;
+        int32_t value = 0;
     } state[NUM_ENCODERS];
 
     pthread_mutex_t lock = {};
@@ -129,7 +129,7 @@ struct LibSerialPort : EventInput {
             if (! state[i].changed)
                 continue;
 
-            const int16_t value = state[i].value;
+            const int32_t value = state[i].value;
             state[i].changed = false;
             state[i].value = 0;
 
@@ -205,7 +205,7 @@ private:
             assert(buf[1] == ' ');
 
             uint8_t index;
-            int16_t value;
+            int32_t value;
 
             if (c >= 'A' && c <= 'Z')
             {

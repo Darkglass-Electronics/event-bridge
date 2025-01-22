@@ -108,22 +108,12 @@ const char* EventStateStr(const EventState state)
 }
 
 /**
- * Convenience function to convert separate r, g, b values into a single 16-bit color value.
- * Color values must be between 0 and 0xf
+ * Convenience function to convert separate r, g, b values into a single 32-bit color value.
  */
 static constexpr inline
-int16_t led_rgb_value(const int8_t r, const int8_t g, const int8_t b)
+int32_t led_rgb_value(const uint8_t r, const uint8_t g, const uint8_t b)
 {
-    return (r & 0xf) << 8 | (g & 0xf) << 4 | (b & 0xf);
-}
-
-/**
- * Convenience function to convert a 32-bit color value into 16-bit.
- */
-static constexpr inline
-int16_t led_rgb_value(const uint32_t rgb)
-{
-    return (rgb & 0xf00000) >> 12 | (rgb & 0xf000) >> 8 | (rgb & 0xf0) >> 4;
+    return (r << 16) | (g << 8) | b;
 }
 
 /**
@@ -150,7 +140,7 @@ struct EventInput {
         /**
          * Event trigger function, called when an event is received.
          */
-        virtual void event(EventType etype, EventState evalue, uint8_t index, int16_t value) = 0;
+        virtual void event(EventType etype, EventState evalue, uint8_t index, int32_t value) = 0;
     };
 
     /** destructor */
@@ -193,7 +183,7 @@ struct EventOutput {
     /**
      * Event trigger function, to be called for sending events.
      */
-    virtual void event(int16_t value) = 0;
+    virtual void event(int32_t value) = 0;
 
     /**
      * Entry point.

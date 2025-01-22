@@ -70,7 +70,7 @@ struct GPIOOutput : EventOutput {
             std::fclose(file);
     }
 
-    void event(const int16_t value) override
+    void event(const int32_t value) override
     {
         if (file != nullptr)
         {

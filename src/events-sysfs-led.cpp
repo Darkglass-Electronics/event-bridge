@@ -40,11 +40,11 @@ struct SysfsLED : EventOutput {
         }
     }
 
-    void event(const int16_t value) override
+    void event(const int32_t value) override
     {
-        const uint8_t r = (value >> 8) & 0xf;
-        const uint8_t g = (value >> 4) & 0xf;
-        const uint8_t b =  value & 0xf;
+        const uint8_t r = (value >> 16) & 0xff;
+        const uint8_t g = (value >> 8) & 0xff;
+        const uint8_t b =  value & 0xff;
         const int values[kNumLEDs] = { r, g, b };
         char svalue[12] = {};
 
@@ -57,7 +57,9 @@ struct SysfsLED : EventOutput {
 
             if (files[i] != nullptr)
             {
-                const int ivalue = static_cast<float>(values[i]) / 0xf * maxBrightness[i] * 0.1f;
+                const int ivalue = maxBrightness[i] == 0xff
+                                 ? values[i]
+                                 : static_cast<float>(values[i]) / 0xff * maxBrightness[i];
                 std::snprintf(svalue, sizeof(svalue) - 1, "%d", ivalue);
 
                 std::fseek(files[i], 0, SEEK_SET);
