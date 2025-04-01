@@ -1,4 +1,4 @@
-// SPDX-FileCopyrightText: 2024 Filipe Coelho <falktx@darkglass.com>
+// SPDX-FileCopyrightText: 2024-2025 Filipe Coelho <falktx@darkglass.com>
 // SPDX-License-Identifier: ISC
 
 #include "event-bridge.hpp"
@@ -84,6 +84,23 @@ struct EventBridge::Impl : EventInput::Callback
             input->clear();
     }
 
+    void enableTapTempo(const EventType etype, uint8_t index, const bool enable)
+    {
+        switch (etype)
+        {
+        case kEventTypeNull:
+        case kEventTypeEncoder:
+        case kEventTypeLED:
+            break;
+        case kEventTypeFootswitch:
+            index += NUM_ENCODERS;
+            break;
+        }
+
+        for (EventInput* input : inputs)
+            input->enableTapTempo(index, enable);
+    }
+
     void poll()
     {
         for (EventInput* input : inputs)
@@ -133,6 +150,11 @@ bool EventBridge::addOutput(const EventOutput::BackendType type, const char* con
 void EventBridge::clear()
 {
     impl->clear();
+}
+
+void EventBridge::enableTapTempo(const EventType etype, const uint8_t index, const bool enable)
+{
+    impl->enableTapTempo(etype, index, enable);
 }
 
 void EventBridge::poll()

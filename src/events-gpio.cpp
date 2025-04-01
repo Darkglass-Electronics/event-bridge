@@ -1,4 +1,4 @@
-// SPDX-FileCopyrightText: 2024 Filipe Coelho <falktx@darkglass.com>
+// SPDX-FileCopyrightText: 2024-2025 Filipe Coelho <falktx@darkglass.com>
 // SPDX-License-Identifier: ISC
 
 #include "event-bridge.hpp"
@@ -28,6 +28,11 @@ struct GPIOInput : EventInput {
     {
         if (file != nullptr)
             std::fclose(file);
+    }
+
+    void enableTapTempo(const uint8_t index, const bool enable) override
+    {
+        // TODO
     }
 
     // FIXME timer poll is bad, rework API to work via FDs directly

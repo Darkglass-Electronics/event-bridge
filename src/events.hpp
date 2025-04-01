@@ -13,6 +13,31 @@
 #endif
 
 /**
+ * Default tap-tempo hysteresis in milliseconds.
+ * If time between taps takes longer than this hysteresis, absolute delta-time is used as tap-tempo.
+ * Otherwise a running average is used.
+ */
+#ifndef EVENT_BRIDGE_TAP_TEMPO_HYSTERESIS
+#define EVENT_BRIDGE_TAP_TEMPO_HYSTERESIS 750
+#endif
+
+/**
+ * Default tap-tempo timeout in milliseconds.
+ * If time between taps takes longer than this timeout, they are ignored.
+ */
+#ifndef EVENT_BRIDGE_TAP_TEMPO_TIMEOUT
+#define EVENT_BRIDGE_TAP_TEMPO_TIMEOUT 3000
+#endif
+
+/**
+ * Default tap-tempo timeout overflow in milliseconds.
+ * Taps will be accepted and clamped to EVENT_BRIDGE_TAP_TEMPO_TIMEOUT if overflowing by this amount.
+ */
+#ifndef EVENT_BRIDGE_TAP_TEMPO_TIMEOUT_OVERFLOW
+#define EVENT_BRIDGE_TAP_TEMPO_TIMEOUT_OVERFLOW 50
+#endif
+
+/**
  * Default number of encoders to use.
  */
 #ifndef NUM_ENCODERS
@@ -59,14 +84,17 @@ enum EventType {
  * @see EventType
  */
 enum EventState {
-    /** Footswitch is "up" or released. */
+    /** Actuator is "up" or released. */
     kEventStateReleased = 0,
 
-    /** Footswitch is "down" or pressed. */
+    /** Actuator is "down" or pressed. */
     kEventStatePressed,
 
     /** Footswitch has been pressed for a "long" time, defined by @a EVENT_BRIDGE_LONG_PRESS_TIME. */
     kEventStateLongPressed,
+
+    /** Actuator updated tap-tempo value. */
+    kEventStateTapTempo,
 };
 
 /**
@@ -103,6 +131,8 @@ const char* EventStateStr(const EventState state)
         return "kEventStatePressed";
     case kEventStateLongPressed:
         return "kEventStateLongPressed";
+    case kEventStateTapTempo:
+        return "kEventStateTapTempo";
     }
     return "";
 }
@@ -150,6 +180,11 @@ struct EventInput {
      * Clear current state, for preventing unwanted long-press events.
      */
     virtual void clear() {}
+
+    /**
+     * Enable tap-tempo for a specific actuator.
+     */
+    virtual void enableTapTempo(uint8_t index, bool enable) = 0;
 
     /**
      * Event polling function, to be called at regular intervals.

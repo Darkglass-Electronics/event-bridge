@@ -1,4 +1,4 @@
-// SPDX-FileCopyrightText: 2024 Filipe Coelho <falktx@darkglass.com>
+// SPDX-FileCopyrightText: 2024-2025 Filipe Coelho <falktx@darkglass.com>
 // SPDX-License-Identifier: ISC
 
 #pragma once
@@ -46,6 +46,11 @@ struct EventBridge {
      * Clear current state, for preventing unwanted long-press events.
      */
     void clear();
+
+    /**
+     * Enable tap-tempo for a specific actuator.
+     */
+    void enableTapTempo(EventType etype, uint8_t index, bool enable = true);
 
     /**
      * Event polling function, to be called at regular intervals.

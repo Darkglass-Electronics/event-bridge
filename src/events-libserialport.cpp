@@ -1,4 +1,4 @@
-// SPDX-FileCopyrightText: 2024 Filipe Coelho <falktx@darkglass.com>
+// SPDX-FileCopyrightText: 2024-2025 Filipe Coelho <falktx@darkglass.com>
 // SPDX-License-Identifier: ISC
 
 #include "event-bridge.hpp"
@@ -30,11 +30,16 @@ static uint32_t get_time_ms() noexcept
     return (ts.tv_sec * 1000 + ts.tv_nsec / 1000000) - s.ms;
 }
 
+static uint32_t abs_delta(const uint32_t a, const uint32_t b) noexcept
+{
+    return a > b ? b - a : a - b;
+}
+
 // --------------------------------------------------------------------------------------------------------------------
 
 struct LibSerialPort : EventInput {
     struct sp_port* serialport = nullptr;
-    struct {
+    struct State {
         // live state
         uint32_t time = 0;
         EventState state = kEventStateReleased;
@@ -42,6 +47,16 @@ struct LibSerialPort : EventInput {
         bool changed = false;
         int32_t value = 0;
     } state[NUM_ENCODERS];
+    struct TapTempo {
+        uint32_t time = 0;
+        uint32_t value = 0;
+        bool enabled = false;
+        bool updated = false;
+    } tapTempo[NUM_ENCODERS];
+
+    // copies
+    State state2[NUM_ENCODERS];
+    TapTempo tapTempo2[NUM_ENCODERS];
 
     pthread_mutex_t lock = {};
 
@@ -114,6 +129,29 @@ struct LibSerialPort : EventInput {
             state[i].value = 0;
         }
 
+        for (int i = 0; i < sizeof(tapTempo)/sizeof(tapTempo[0]); ++i)
+        {
+            tapTempo[i].time = 0;
+            tapTempo[i].value = 0;
+            tapTempo[i].enabled = false;
+            tapTempo[i].updated = false;
+        }
+
+        pthread_mutex_unlock(&lock);
+    }
+
+    void enableTapTempo(const uint8_t index, const bool enable) override
+    {
+        if (index >= NUM_ENCODERS)
+            return;
+
+        pthread_mutex_lock(&lock);
+
+        tapTempo[index].time = 0;
+        tapTempo[index].value = 0;
+        tapTempo[index].enabled = enable;
+        tapTempo[index].updated = false;
+
         pthread_mutex_unlock(&lock);
     }
 
@@ -122,27 +160,62 @@ struct LibSerialPort : EventInput {
         if (! thread.running)
             readSerialData(1);
 
+        copy2();
+
+        for (int i = 0; i < sizeof(state2)/sizeof(state2[0]); ++i)
+        {
+            if (! state2[i].changed)
+                continue;
+
+            state2[i].changed = false;
+
+            if (i < NUM_ENCODERS)
+                cb->event(kEventTypeEncoder, state2[i].state, i, state2[i].value);
+            else
+                cb->event(kEventTypeFootswitch, state2[i].state, i - NUM_ENCODERS, state2[i].value);
+        }
+
+        for (int i = 0; i < sizeof(tapTempo2)/sizeof(tapTempo2[0]); ++i)
+        {
+            if (! tapTempo2[i].updated)
+                continue;
+
+            tapTempo2[i].updated = false;
+
+            if (i < NUM_ENCODERS)
+                cb->event(kEventTypeEncoder, kEventStateTapTempo, i, tapTempo2[i].value * 1000);
+            else
+                cb->event(kEventTypeFootswitch, kEventStateTapTempo, i - NUM_ENCODERS, tapTempo2[i].value * 1000);
+        }
+    }
+
+private:
+    void copy2()
+    {
         pthread_mutex_lock(&lock);
 
         for (int i = 0; i < sizeof(state)/sizeof(state[0]); ++i)
         {
-            if (! state[i].changed)
-                continue;
+            if (state[i].changed)
+            {
+                state2[i] = state[i];
+                state[i].changed = false;
+                state[i].value = 0;
+            }
+        }
 
-            const int32_t value = state[i].value;
-            state[i].changed = false;
-            state[i].value = 0;
-
-            if (i < NUM_ENCODERS)
-                cb->event(kEventTypeEncoder, state[i].state, i, value);
-            else
-                cb->event(kEventTypeFootswitch, state[i].state, i - NUM_ENCODERS, value);
+        for (int i = 0; i < sizeof(tapTempo)/sizeof(tapTempo[0]); ++i)
+        {
+            if (tapTempo[i].updated)
+            {
+                tapTempo2[i] = tapTempo[i];
+                tapTempo[i].updated = false;
+            }
         }
 
         pthread_mutex_unlock(&lock);
     }
 
-private:
     static void* _run(void* const arg)
     {
         static_cast<LibSerialPort*>(arg)->run();
@@ -151,17 +224,19 @@ private:
 
     void run()
     {
+        static constexpr const uint32_t timeoutMs = 100;
+
         while (thread.running)
-            readSerialData(100);
+            readSerialData(timeoutMs);
     }
 
-    void readSerialData(const uint32_t timeout)
+    void readSerialData(const uint32_t timeoutMs)
     {
         int ret;
         unsigned int offs = 0;
         char buf[0xff];
 
-        ret = sp_blocking_read(serialport, buf, 2, timeout);
+        ret = sp_blocking_read(serialport, buf, 2, timeoutMs);
 
         if (ret <= 0)
         {
@@ -185,7 +260,7 @@ private:
 
         for (offs = ret; offs < sizeof(buf); ++offs)
         {
-            ret = sp_blocking_read(serialport, buf + offs, 1, timeout);
+            ret = sp_blocking_read(serialport, buf + offs, 1, timeoutMs);
             if (ret != 1)
             {
                 updateLongPresses();
@@ -232,6 +307,9 @@ private:
                 {
                     state[index].time = get_time_ms();
                     state[index].state = kEventStatePressed;
+
+                    if (tapTempo[index].enabled)
+                        updateTapTempo(index);
                 }
                 else
                 {
@@ -274,6 +352,33 @@ private:
         }
 
         pthread_mutex_unlock(&lock);
+    }
+
+    void updateTapTempo(const uint8_t index)
+    {
+        const uint32_t timeMs = state[index].time;
+        const uint32_t last = tapTempo[index].time;
+        tapTempo[index].time = timeMs;
+
+        if (last == 0)
+            return;
+
+        uint32_t delta = timeMs - last;
+
+        if (delta > EVENT_BRIDGE_TAP_TEMPO_TIMEOUT)
+        {
+            if (delta - EVENT_BRIDGE_TAP_TEMPO_TIMEOUT_OVERFLOW > EVENT_BRIDGE_TAP_TEMPO_TIMEOUT)
+                return;
+
+            delta = EVENT_BRIDGE_TAP_TEMPO_TIMEOUT;
+        }
+
+        if (abs_delta(tapTempo[index].value, delta) < EVENT_BRIDGE_TAP_TEMPO_HYSTERESIS)
+            tapTempo[index].value = (tapTempo[index].value * 2 + delta) / 3;
+        else
+            tapTempo[index].value = delta;
+
+        tapTempo[index].updated = true;
     }
 };
 
