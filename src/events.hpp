@@ -138,15 +138,6 @@ const char* EventStateStr(const EventState state)
 }
 
 /**
- * Convenience function to convert separate r, g, b values into a single 32-bit color value.
- */
-static constexpr inline
-int32_t led_rgb_value(const uint8_t r, const uint8_t g, const uint8_t b)
-{
-    return (r << 16) | (g << 8) | b;
-}
-
-/**
  * Abstract Event class for receiving events.
  */
 struct EventInput {
